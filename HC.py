@@ -1,4 +1,8 @@
 import numpy as N
+import colorama
+colorama.init()
+def yellow(text):
+	return colorama.Fore.YELLOW + colorama.Style.BRIGHT + text + colorama.Style.RESET_ALL
 
 class Na():
 	'''	
@@ -172,7 +176,7 @@ class Solar_salt():
 			Tlow = (T<self.Tmin)
 			Thigh = (T>self.Tmax)
 		if Tlow or Thigh:
-			print("Temperature of Solar Salt outside of correlations range")
+			print("Temperature of Solar Salt outside of correlations range: T_min=%s and T_max=%s"%(T.min(),T.max()))
 			return False
 		else:
 			return True
@@ -264,6 +268,9 @@ class Solar_salt():
 
 			f_D = self.f_D(mf_HC_tube, T, D_tube_in)
 			Pr_w = self.Cp(T_w)*self.mu(T_w)/self.k(T_w)
+			varctrl = self.k(T_w)
+			if N.all(N.isnan(varctrl)):
+				print(yellow("varctrl: %s"%str(N.all(N.isnan(varctrl)))))
 			K = (Pr/Pr_w)**0.11
 			Nu_3 = ((f_D/8.)*(Re-1000.)*Pr/(1.+12.7*N.sqrt(f_D/8.)*(Pr**(2./3.)-1.)))*K # Gnielinski
 			Nu[Gnielinski] = Nu_3[Gnielinski]
@@ -273,6 +280,10 @@ class Solar_salt():
 			return N.nan
 		# Heat transfer coefficient:
 		u = Nu*k/(D_tube_in)
+		# Including fouling resistance
+		Rf = 8.808e-5
+		R = Rf + 1/u
+		u = 1/R
 		return u
 
 	def f_D(self, mf_HC_tube, T, D_tube_in, tube_roughness=45e-6):
@@ -362,4 +373,4 @@ if __name__=='__main__':
 	plt.figlegend([leg2, leg1, p1, p2], ['Solar salt', 'Sodium', 'Low temperature system', 'High temperature system'], loc=1, ncol=1)
 	plt.ylim(ymin, ymax)
 
-	plt.savefig('/home/ael/Documents/Boulot/Material_properties/HC props.png', dpi=500)
+	plt.savefig('HC props.png', dpi=500)

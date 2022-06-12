@@ -368,6 +368,7 @@ class Cyl_receiver():
 		Flow-path options:
 		- SENWS: South-East-North-West-South the single path around the receiver injecting in South at the top and running around the profile vertically in a counter-clockwise fashion.
 		- SEN-SWN: is a double flow path option. First flow-path geos from South to North via East, the second from South to North, via West. Injected at the top as well.
+		- NES-NWS: is a double flow path option. First flow-path geos from North to South via East, the second from North to South, via West. Injected at the bottom.
 		- mvit+x: Multiple Vertical flow-paths introduced at the top and conducting as many vertical passes as needed to cover the profile. The rotation is counter-clockwise, the number of flow-paths is interpreted from the number at the end of the string argument.
 		- smvSit+x: Symmetrical multiple vertical flow-paths south introduced at the top. Same as previous but all inlet is introduced on the south face and progresses towards the north in two groups. One group (even flow-paths) goes counter-clockwise, the other (odd flow-paths) goes clockwise
 		- cmvSit+x: Crossed multiple vertical flow-paths from south and introduced at the top. Same as previous but all inlet is introduced on the south face and progresses until filling the south facing half-cylinder. Afterwards, the flow-paths are "crossed" (central symmetry using the cylinder axis) and the rest of the progression goes from the west and east towards North before exiting the receiever.
@@ -410,9 +411,11 @@ class Cyl_receiver():
 				fp = N.zeros(int(N.shape(self.ahr)[0]/n_fp), dtype=int)
 				for b in range(int(self.n_banks/n_fp)):
 					if f == 0:
+						strt = b
 						fploc = self.ahr_map[:,b+self.n_banks/n_fp]
 						fluxloc = self.ahr_map[:,b+self.n_banks/n_fp]
 					else: # reverse the rotation
+						strt = self.n_banks - b - 1
 						fploc = self.ahr_map[:,self.n_banks/n_fp-1-b]
 						fluxloc = self.ahr_map[:,self.n_banks/n_fp-1-b]
 					if b%2: # Reverse bank direction if odd bank.
@@ -420,7 +423,71 @@ class Cyl_receiver():
 						fluxloc = fluxloc[::-1]
 
 					fp[b*self.n_elems:(b+1)*self.n_elems] = fploc
-					flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc.astype(int)]
+
+					flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc]
+					Strt.append(strt)
+
+				self.fp.append(fp)
+				self.flux_fp.append(flux_fp)
+				self.areas_fp.append(self.areas[fp])
+
+		if option == 'NES-NWS':
+			"""
+			Two flow-paths from North and introduced at the top.
+			HTF is introduced on the North face and progresses until filling the North facing half-cylinder.
+			"""
+
+			self.fp = []
+			self.flux_fp = []
+			self.areas_fp = []
+
+			top_injection = True              # HTF inlet at the top
+			nf = 2                            # Number of flowpaths
+
+			if (self.n_banks%nf) != 0:
+				print 'Mismatch between the flow path and the discretisation.'
+				stop
+			elif (nf%2) != 0:
+				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "NES-NWS".'
+				stop
+
+			vpasses = self.n_banks/nf         # Number of vertical-passes per flow-path
+
+			for f in xrange(nf):
+				# For each flow-path, fill the flow-path list of sequential elements in which the HC goes in order.
+				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
+				flux_fp = N.zeros(len(self.areas)/nf)
+
+				# For each pass, one per bank of pipe, find the element of the fluxmap that are being seen by the fluid.
+				half_pass = vpasses
+				for i in range(vpasses):
+					if i< half_pass:
+						if f%2:
+							strt = self.n_banks/2-1-(f-1)/2*half_pass-i
+							end = strt+self.n_banks*self.n_elems
+						else:
+							strt = self.n_banks/2+f/2*half_pass+i
+							end = strt+self.n_banks*self.n_elems
+					else:
+						if f%2:
+							strt = self.n_banks-((f-1)/2+1)*(vpasses-half_pass)+(i-half_pass)
+							end = strt+self.n_banks*self.n_elems
+						else:
+							strt = (f/2+1)*(vpasses-half_pass)-(i-half_pass)-1
+							end = strt+self.n_banks*self.n_elems
+
+					elems = N.arange(strt, end, self.n_banks)
+					Strt.append(strt)
+
+					if (i%2.)==0:
+						elems = elems[::-1] # if even pass, go down.
+
+					if top_injection == False:
+						elems = elems[::-1]
+
+					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -847,7 +914,7 @@ class Cyl_receiver():
 				self.areas_fp.append(self.areas[fp])
 		self.Strt=Strt
 		return Strt
-		
+
 	def balance(self, HC, material, T_in, T_out, T_amb, h_conv_ext, filesave='/home/charles/Documents/Boulot/ASTRI/Sodium receiver_CMI/ref_case_result', load=1., air_velocity=5.):
 
 		self.h = []
