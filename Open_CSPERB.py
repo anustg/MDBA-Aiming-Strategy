@@ -7,7 +7,7 @@ def eval_v_max(e_net_fp, HC, T_in, T_out, W_abs, n_b, D_tube_o, D_tube_in, pipe_
 	Dh = HC.h(T_out)-HC.h(T_in)
 	vmax = e_net_fp/(Dh*n_t*HC.rho(T_out)*N.pi/4.*D_tube_in**2.)
 	#vmin = HC.mu(T_out)/D_tube_o/HC.rho(T_out)*1e4
-	#print e_net_fp/(2.44*(Dh*HC.rho(T_out)*N.pi/4.*D_tube_in**2.))*(D_tube_o+pipe_spacing)/N.pi
+	#print(e_net_fp/(2.44*(Dh*HC.rho(T_out)*N.pi/4.*D_tube_in**2.))*(D_tube_o+pipe_spacing)/N.pi
 	
 	return vmax, n_t
 
@@ -51,7 +51,7 @@ def determine_fp(total_power_incident, HC, T_in, T_out, D_tube_o, D_tube_in, n_b
 						continue
 				n_fp.append(i)
 		n_fp = N.array(n_fp)
-		print 'For %s banks, %s flow path configurations evaluated: %s'%(str(n_b),str(len(n_fp)), str(n_fp))
+		print('For %s banks, %s flow path configurations evaluated: %s'%(str(n_b),str(len(n_fp)), str(n_fp)))
 
 		e_net_fp = bank_eff*total_power_incident/n_fp
 		if prism:
@@ -68,13 +68,13 @@ def determine_fp(total_power_incident, HC, T_in, T_out, D_tube_o, D_tube_in, n_b
 			idx_min_fp = N.argmin(n_fp[idx_valid])
 			n_fp_min, v_max = str(n_fp[idx_valid][idx_min_fp]), v_max[idx_valid][idx_min_fp]
 
-			print 'For %s banks, %s flow-paths is the simplest configuration and it has %s m/s maximum velocity'%(n_b, n_fp_min, v_max)
+			print('For %s banks, %s flow-paths is the simplest configuration and it has %s m/s maximum velocity'%(n_b, n_fp_min, v_max))
 			n_bs.append(n_b)
 			n_fps.append(n_fp_min)
 			v_maxs.append(v_max)
 			n_ts.append(n_t)
 		else:
-			print 'For %s banks, no valid flow-paths. Velocities:'%(n_b), v_max
+			print('For %s banks, no valid flow-paths. Velocities:'%(n_b), v_max)
 	return n_bs, n_fps, v_maxs, n_ts
 
 class Bill_receiver():
@@ -130,7 +130,7 @@ class Bill_receiver():
 		if option[:4] == 'CTE2':
 
 			n_fp=2
-			passes = self.n_banks/n_fp
+			passes = int(self.n_banks/n_fp)
 
 			self.fp = []
 			self.flux_fp = []
@@ -138,8 +138,8 @@ class Bill_receiver():
 
 			for f in range(n_fp):
 
-				flux_fp = N.zeros(N.shape(self.wh)[0]/n_fp)
-				fp = N.zeros(N.shape(self.wh)[0]/n_fp, dtype=int)
+				flux_fp = N.zeros(int(N.shape(self.wh)[0]/n_fp))
+				fp = N.zeros(int(N.shape(self.wh)[0]/n_fp), dtype=int)
 
 				for p in range(passes):
 					if f==0:
@@ -165,7 +165,7 @@ class Bill_receiver():
 						fluxloc = fluxloc[::-1]
 	
 					fp[p*self.n_elems:(p+1)*self.n_elems] = fploc
-					flux_fp[p*self.n_elems:(p+1)*self.n_elems] = flatmap[fluxloc]
+					flux_fp[p*self.n_elems:(p+1)*self.n_elems] = flatmap[fluxloc.astype(int)]
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -178,16 +178,17 @@ class Bill_receiver():
 		self.T_out = T_out
 		self.air_velocity = air_velocity
 
-		self.q_net = N.zeros(len(self.wh))
-		self.q_rad = N.zeros(len(self.wh))
-		self.q_ref = N.zeros(len(self.wh))
-		self.q_conv = N.zeros(len(self.wh))
-		self.T_w_int = N.zeros(len(self.wh))
-		self.T_ext = N.ones(len(self.wh))*self.T_in
-		self.h_conv_int = N.zeros(len(self.wh))
-		self.V = N.zeros(len(self.wh))
-		self.n_tubes = N.zeros(len(self.wh))
-		self.Dp = N.zeros(len(self.wh))
+		self.q_net = N.zeros(int(len(self.wh)))
+		self.q_rad = N.zeros(int(len(self.wh)))
+		self.q_ref = N.zeros(int(len(self.wh)))
+		self.q_conv = N.zeros(int(len(self.wh)))
+		self.T_w_int = N.zeros(int(len(self.wh)))
+		self.T_ext = N.ones(int(len(self.wh)))*self.T_in
+		self.h_conv_int = N.zeros(int(len(self.wh)))
+		self.V = N.zeros(int(len(self.wh)))
+		self.n_tubes = N.zeros(int(len(self.wh)))
+		self.Dp = N.zeros(int(len(self.wh)))
+		
 		self.pipe_lengths = []
 
 		if h_conv_ext == 'WSVH':
@@ -205,7 +206,7 @@ class Bill_receiver():
 			self.m = []
 			self.T_HC = []
 			T_ext_old = N.hstack(self.T_ext)
-			for f in xrange(len(self.fp)):
+			for f in range(int(len(self.fp))):
 				areas = self.areas_fp[f]
 				fp = self.fp[f]
 
@@ -238,7 +239,7 @@ class Bill_receiver():
 
 					m = N.sum(q_net)/(h[-1]-h[0])
 
-					for i in xrange(len(areas)):
+					for i in range(int(len(areas))):
 
 						h[i+1] = h[i]+q_net[i]/m
 						T_next = T_HC[i]*(1.+q_net[i]/N.sum(q_net))
@@ -340,7 +341,7 @@ class Cyl_receiver():
 		ahr[:,2,0], ahr[:,2,1] = rad, rad
 
 		self.ahr = ahr
-		idxs = N.arange(N.shape(self.ahr)[0], dtype=int)
+		idxs = N.arange(int(N.shape(self.ahr)[0]), dtype=int)
 		idxs = N.reshape(idxs, (n_elems, n_banks))
 		self.ahr_map = idxs # map the ahr binning scheme indices on a 2D array fitting the fluxmap dimensions and orientation and respecting the ahr order. Used for flow_path indexing.
 
@@ -383,7 +384,7 @@ class Cyl_receiver():
 			flux_fp = N.zeros(N.shape(self.ahr)[0])
 			fp = N.zeros(N.shape(self.ahr)[0], dtype=int)
 			
-			for b in xrange(self.n_banks):
+			for b in range(int(self.n_banks)):
 				# Reverse bank direction if odd bank.
 				fploc = self.ahr_map[:,b]
 				fluxloc = self.ahr_map[:,b]
@@ -391,7 +392,7 @@ class Cyl_receiver():
 					fploc = fploc[::-1]
 					fluxloc = fluxloc[::-1]
 				fp[b*self.n_elems:(b+1)*self.n_elems] = fploc
-				flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc]
+				flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc.astype(int)]
 
 			self.fp = [fp]
 			self.flux_fp = [flux_fp]
@@ -404,10 +405,10 @@ class Cyl_receiver():
 			self.flux_fp = []
 			self.areas_fp = []
 
-			for f in xrange(n_fp):
-				flux_fp = N.zeros(N.shape(self.ahr)[0]/n_fp)
-				fp = N.zeros(N.shape(self.ahr)[0]/n_fp, dtype=int)
-				for b in xrange(self.n_banks/n_fp):
+			for f in range(int(n_fp)):
+				flux_fp = N.zeros(int(N.shape(self.ahr)[0]/n_fp))
+				fp = N.zeros(int(N.shape(self.ahr)[0]/n_fp), dtype=int)
+				for b in range(int(self.n_banks/n_fp)):
 					if f == 0:
 						fploc = self.ahr_map[:,b+self.n_banks/n_fp]
 						fluxloc = self.ahr_map[:,b+self.n_banks/n_fp]
@@ -419,7 +420,7 @@ class Cyl_receiver():
 						fluxloc = fluxloc[::-1]
 
 					fp[b*self.n_elems:(b+1)*self.n_elems] = fploc
-					flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc]
+					flux_fp[b*self.n_elems:(b+1)*self.n_elems] = flatmap[fluxloc.astype(int)]
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -436,13 +437,13 @@ class Cyl_receiver():
 				top_injection = False
 			nf = int(option[4:])
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
-			vpasses = self.n_banks/nf
-			for f in xrange(nf):
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)
-				for i in xrange(vpasses):
+			vpasses = int(self.n_banks/nf)
+			for f in range(nf):
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
+				for i in range(vpasses):
 					# Start and end of the flow-path segment in the fluxmap referential:
 					strt = f*self.n_banks/nf+i
 					end = strt+self.n_banks*self.n_elems
@@ -456,7 +457,7 @@ class Cyl_receiver():
 
 					# Idices of the flow-path segment in the ahr referential.
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 				Strt.append(strt)
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -474,17 +475,17 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".')
 				stop
 
-			vpasses = self.n_banks/nf		
-			for f in xrange(nf):
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)						
-				for i in xrange(vpasses):
+			vpasses = int(self.n_banks/nf)		
+			for f in range(nf):
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))						
+				for i in range(vpasses):
 					if f%2:
 						strt = self.n_banks-(f+1+i*nf)/2
 						end = strt+self.n_banks*self.n_elems
@@ -500,7 +501,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 					Strt.append(strt)
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -518,19 +519,19 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".')
 				stop
 
-			vpasses = self.n_banks/nf		
-			for f in xrange(nf):
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)						
+			vpasses = int(self.n_banks/nf)		
+			for f in range(nf):
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))						
 				# for each pass, one per bank of pipe, find the elemenst of the fluxmap that are being seen by the fluid.
 				half_pass = int(N.ceil(vpasses/2.))
-				for i in xrange(vpasses):
+				for i in range(vpasses):
 					if i< half_pass:
 						if f%2:
 							strt = self.n_banks/2-1-(f-1)/2*half_pass-i
@@ -553,7 +554,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 					Strt.append(strt)
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 				
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -571,19 +572,19 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "smvSi".')
 				stop
 
-			vpasses = self.n_banks/nf		
-			for f in xrange(nf):
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)						
+			vpasses = int(self.n_banks/nf)		
+			for f in range(nf):
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))						
 				# for each pass, one per bank of pipe, find the elemenst of the fluxmap that are being seen by the fluid.
 				half_pass = int(N.ceil(vpasses/2.))
-				for i in xrange(vpasses):
+				for i in range(vpasses):
 					if i< half_pass:
 						if f%2:
 							strt = self.n_banks/2-1-(f-1)/2*half_pass-i
@@ -606,7 +607,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 					Strt.append(strt)
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
 				self.areas_fp.append(self.areas[fp])
@@ -623,17 +624,17 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvNit".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvNit".')
 				stop
-			vpasses = self.n_banks/nf
+			vpasses = int(self.n_banks/nf)
 			
-			for f in xrange(nf):
+			for f in range(nf):
 				# For each flow-path, fille the flow-path list of sequential elements in which the HC goes in order.
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
 				# for each pass, one per bank of pipe, find the elemenst of the fluxmap that are being seen by the fluid.
 				half_pass = int(N.ceil(vpasses/2.))
 				for i in range(vpasses):
@@ -660,7 +661,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -679,16 +680,16 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvSit".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvSit".')
 				stop
-			vpasses = self.n_banks/nf
+			vpasses = int(self.n_banks/nf)
 			
-			for f in xrange(nf):
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)
+			for f in range(nf):
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
 				half_pass = int(N.ceil(vpasses/2.))
 				for i in range(vpasses):
 					if i< half_pass:
@@ -714,7 +715,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems.astype(int)]
 				
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -734,17 +735,17 @@ class Cyl_receiver():
 			nf = int(option[6:])
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvNit".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvNit".')
 				stop
-			vpasses = self.n_banks/nf
+			vpasses = int(self.n_banks/nf)
 			
-			for f in xrange(nf):
+			for f in range(nf):
 				# For each flow-path, fille the flow-path list of sequential elements in which the HC goes in order.
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
 				# for each pass, one per bank of pipe, find the elemenst of the fluxmap that are being seen by the fluid.
 				half_pass = int(N.ceil(vpasses/2.))
 				for i in range(vpasses):
@@ -775,7 +776,7 @@ class Cyl_receiver():
 						elems = elems[::-1]
 					'''
 					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
-					flux_fp[i*self.n_elems: (i+1)*self.n_elems] = flatmap[elems]
+					flux_fp[int(i*self.n_elems): int((i+1)*self.n_elems)] = flatmap[elems.astype(int)]
 
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
@@ -792,23 +793,23 @@ class Cyl_receiver():
 		self.T_out = T_out
 		self.air_velocity = air_velocity
 
-		self.q_net = N.zeros(len(self.ahr))
-		self.q_rad = N.zeros(len(self.ahr))
-		self.q_ref = N.zeros(len(self.ahr))
-		self.q_conv = N.zeros(len(self.ahr))
-		self.T_w_int = N.zeros(len(self.ahr))
-		self.T_ext = N.ones(len(self.ahr))*self.T_in
-		self.h_conv_int = N.zeros(len(self.ahr))
-		self.V = N.zeros(len(self.ahr))
-		self.n_tubes = N.zeros(len(self.ahr))
-		self.Dp = N.zeros(len(self.ahr))
+		self.q_net = N.zeros(int(len(self.ahr)))
+		self.q_rad = N.zeros(int(len(self.ahr)))
+		self.q_ref = N.zeros(int(len(self.ahr)))
+		self.q_conv = N.zeros(int(len(self.ahr)))
+		self.T_w_int = N.zeros(int(len(self.ahr)))
+		self.T_ext = N.ones(int(len(self.ahr)))*self.T_in
+		self.h_conv_int = N.zeros(int(len(self.ahr)))
+		self.V = N.zeros(int(len(self.ahr)))
+		self.n_tubes = N.zeros(int(len(self.ahr)))
+		self.Dp = N.zeros(int(len(self.ahr)))
 		self.pipe_lengths = []
 
 		if h_conv_ext == 'WSVH':
-			from Convection_loss import cyl_conv_loss_coeff_WSVH
+			from .Convection_loss import cyl_conv_loss_coeff_WSVH
 			self.h_conv_ext = cyl_conv_loss_coeff_WSVH(self.height, 2.*self.radius, self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		if h_conv_ext == 'SK':
-			from Convection_loss import cyl_conv_loss_coeff_SK
+			from .Convection_loss import cyl_conv_loss_coeff_SK
 			self.h_conv_ext = cyl_conv_loss_coeff_SK(self.height, 2.*self.radius, self.D_coating_o/2., self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		else:
 			self.h_conv_ext = h_conv_ext
@@ -817,7 +818,7 @@ class Cyl_receiver():
 			self.m = []
 			self.T_HC = []
 			T_ext_old = N.hstack(self.T_ext)
-			for f in xrange(len(self.fp)):
+			for f in range(int(len(self.fp))):
 				areas = self.areas_fp[f]
 				fp = self.fp[f]
 				n_elems_fp = len(fp)
@@ -849,7 +850,7 @@ class Cyl_receiver():
 
 					m = N.sum(q_net)/(h[-1]-h[0])
 
-					for i in xrange(len(areas)):
+					for i in range(int(len(areas))):
 
 						h[i+1] = h[i]+q_net[i]/m
 						T_next = T_HC[i]*(1.+q_net[i]/N.sum(q_net))
@@ -890,7 +891,7 @@ class Cyl_receiver():
 				# Pressure drops:
 				#dists = N.sqrt((x[1:]-x[:-1])**2.+(y[1:]-y[:-1])**2.)
 				#elem_lengths[:-1] += dists
-				#print convergence,T_ext
+				#print(convergence,T_ext)
 				self.pipe_lengths.append(N.add.accumulate(N.hstack([0,elem_lengths])))
 				
 				self.h.append(h)
@@ -908,7 +909,7 @@ class Cyl_receiver():
 				self.Dp[fp] = HC.p_drop(m/n_tubes, (T_HC[:-1]+T_HC[1:])/2., self.D_tubes_i, elem_lengths)
 				self.V[fp] = V
 			
-			#print N.average(T_ext),self.h_conv_ext
+			#print(N.average(T_ext),self.h_conv_ext)
 			'''
 			# Update convective loss:
 			T_conv_av = N.average(T_ext)
@@ -930,13 +931,13 @@ class Cyl_receiver():
 				self.h_conv_ext = h_conv_ext
 			convergence_tot = N.abs(N.hstack(self.T_ext)-T_ext_old)/N.hstack(self.T_ext)
 		if N.isnan(N.hstack(self.V).any()):
-			print 'Energy balance error'
+			print('Energy balance error')
 		else:
-			print 'Energy balance OK'
+			print('Energy balance OK')
 		import pickle
 		data = {'ahr': self.ahr, 'radius':self.radius, 'height':self.height, 'n_banks':self.n_banks, 'n_elems':self.n_elems, 'D_tubes_o':self.D_tubes_o, 'D_tubes_i':self.D_tubes_i, 'eff_abs':self.eff_abs, 'abs_t':self.abs_t, 'eff_ems':self.eff_ems, 'ems_t':self.ems_t, 'k_t':material.k(self.T_w_int), 'ahr_map':self.ahr_map, 'fp':self.fp, 'areas':self.areas, 'areas_fp':self.areas_fp, 'HC':HC, 'T_in':self.T_in, 'T_out':self.T_out, 'h_conv_ext':self.h_conv_ext, 'h':self.h, 'm':self.m, 'flux_in':self.flux_fp, 'q_net':self.q_net, 'q_rad':self.q_rad, 'q_ref':self.q_ref, 'q_conv_ext':self.q_conv, 'T_amb':T_amb, 'T_HC':self.T_HC, 'T_w_int':self.T_w_int, 'T_ext':self.T_ext, 'h_conv_int':self.h_conv_int, 'V': self.V, 'fluxmap':self.fluxmap, 'n_tubes':self.n_tubes, 'Dp':self.Dp, 'pipe_lengths':self.pipe_lengths,'Strt':self.Strt}
 
-		file_o = open(filesave, 'w')
+		file_o = open(filesave, 'wb')
 		pickle.dump(data, file_o)
 		file_o.close()
 		
@@ -964,6 +965,6 @@ if __name__=='__main__':
 	from Open_CSPERB_plots import *
 	flux_limits_file='%s/201015_N07740_thermoElasticPeakFlux_velocity/N07740_OD%s_WT1.20_peakFlux_vel.csv'%(path[0],round(D_tubes_o*1000,2))
 	tower_receiver_plots(files=save_file, efficiency=False, maps_3D=False, flux_map=False, flow_paths=True,saveloc=None, billboard=False, flux_limits_file=flux_limits_file)
-	print "done"
+	print("done")
 	
 	

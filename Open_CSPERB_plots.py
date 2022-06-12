@@ -30,9 +30,9 @@ def flux_limits_V(V, Ts, flux_limits_file):
 	flux_lim = fit(V, Ts)
 	return flux_lim[:,0]
 	
-def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, flow_paths=True, saveloc=None, billboard=False, flux_limits_file=None,C_aiming=None):
-	print "plotting"
-	fileo = open(files,'r')
+def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, flow_paths=True, saveloc=None, billboard=False, flux_limits_file=None,C_aiming=None,overflux=True):
+	print("plotting")
+	fileo = open(files,'rb')
 	data = pickle.load(fileo)
 	fileo.close()
 	if saveloc == None:
@@ -83,97 +83,98 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 	Dp = data['Dp'] 
 	pipe_lengths = data['pipe_lengths']
 	Strt=data['Strt']
+	#print(Strt)
 	#maxheight = N.amax(ahr[:,1,:])
 	#maxrad = N.amax(ahr[:,2,:])
 	
 	plt.rc('font', size=8)
 	eff_rec=N.sum(q_net)/N.sum(fluxmap*areas[ahr_map])
-	print 'Receiver efficiency: '+str(eff_rec)
+	print('Receiver efficiency: '+str(eff_rec))
 	# Qin, eff_abs,eff_ems,T_ext_mean,h_ext,q_refl,q_emi,q_conv,eff_rec
-	#print T_ext
-	#print N.average(T_ext),N.sqrt(N.sqrt(N.average(T_ext**4))),h_conv_ext
+	#print(T_ext)
+	#print(N.average(T_ext),N.sqrt(N.sqrt(N.average(T_ext**4))),h_conv_ext)
 	results=[N.sum(fluxmap*areas[ahr_map])/1e6,eff_abs,eff_ems,N.average(T_ext),N.sqrt(N.sqrt(N.average(T_ext**4))),h_conv_ext,N.sum(q_ref)/1e6,N.sum(q_rad)/1e6,N.sum(q_conv)/1e6,eff_rec]
 	
 	vel_max=N.array([])
-	for f in xrange(len(fp)):
+	for f in range(int(len(fp))):
 		vels = m[f]/n_tubes[fp[f]]/(N.pi*(D_tubes_i/2.)**2.*HC.rho(T_HC[f][1:]))
-		#print m[f],HC.rho(T_HC[f][1:]),vels
+		#print(m[f],HC.rho(T_HC[f][1:]),vels
 		vel_max=N.append(vel_max,N.amax(vels))
-	#print vel_max
+	#print(vel_max)
 	
 	if efficiency:
-		#print 'Radius:', radius,' m'
-		print 'Height:', height,' m'
-		print 'Thermal power output:', N.sum(q_net)/1e6, 'MWht'
-		print ' '
-		print 'eta_abs:', (N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref))/N.sum(fluxmap*areas[ahr_map])
-		print 'eta_th:', N.sum(q_net)/(N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref))
-		print 'eta_th_abs:', N.sum(q_net)/N.sum(fluxmap*areas[ahr_map])
+		#print('Radius:', radius,' m')
+		print('Height:', height,' m')
+		print('Thermal power output:', N.sum(q_net)/1e6, 'MWht')
+		print(' ')
+		print('eta_abs:', (N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref))/N.sum(fluxmap*areas[ahr_map]))
+		print('eta_th:', N.sum(q_net)/(N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref)))
+		print('eta_th_abs:', N.sum(q_net)/N.sum(fluxmap*areas[ahr_map]))
 		eta_abs=(N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref))/N.sum(fluxmap*areas[ahr_map])
 		eta_th=N.sum(q_net)/(N.sum(fluxmap*areas[ahr_map])-N.sum(q_ref))
 		eta_th_abs=N.sum(q_net)/N.sum(fluxmap*areas[ahr_map])
-		print ' '
-		print 'q_in:', N.sum(fluxmap*areas[ahr_map])/1e6
-		print 'q_refl:', N.sum(q_ref)/1e6
-		print 'q_emi:', N.sum(q_rad)/1e6
-		print 'q_conv:', N.sum(q_conv)/1e6
-		print 'q_net:', N.sum(q_net)/1e6
+		print(' ')
+		print('q_in:', N.sum(fluxmap*areas[ahr_map])/1e6)
+		print('q_refl:', N.sum(q_ref)/1e6)
+		print('q_emi:', N.sum(q_rad)/1e6)
+		print('q_conv:', N.sum(q_conv)/1e6)
+		print('q_net:', N.sum(q_net)/1e6)
 		q_in=N.sum(fluxmap*areas[ahr_map])/1e6
 		q_refl=N.sum(q_ref)/1e6
 		q_emi=N.sum(q_rad)/1e6
 		q_conv=N.sum(q_conv)/1e6
 		q_net_1=N.sum(q_net)/1e6
-		print 'peak_absorbed_flux:', N.amax(fluxmap)*eff_abs/1e3
+		print('peak_absorbed_flux:', N.amax(fluxmap)*eff_abs/1e3)
 		Q_peak=N.amax(fluxmap)*eff_abs/1e3
-		print 'wall_t_max:', N.amax(T_ext)
+		print('wall_t_max:', N.amax(T_ext))
 		wall_t_max=N.amax(T_ext)
-		print 'peak_ratio of allowable:', 
-		for f in range(len(fp)):
+		print('peak_ratio of allowable:', )
+		for f in range(int(len(fp))):
 			mfp = m[f]*N.ones(len(n_tubes[fp[f]]))
 			nts = N.array(n_tubes[fp[f]])
 			flux_lims = flux_limits(mfp/nts, T_HC[f], flux_limits_file)/1e3
 			flux_fp = q_net[fp[f]]/areas[fp[f]]/1e3
 			flux_fp = N.hstack((flux_fp[0], flux_fp))
-			print N.around(N.amax(N.hstack(flux_fp/flux_lims)), decimals=3),
-		print ' '
-		print ' '
-		print 'Reflective loss:', N.sum(q_ref)/N.sum(fluxmap*areas[ahr_map])
-		print 'Convective loss:', N.sum(q_conv)/N.sum(fluxmap*areas[ahr_map])
-		print 'Radiative loss:', N.sum(q_rad)/N.sum(fluxmap*areas[ahr_map])
-		print 'Mass flows: ', N.sum(m), m, 'kg/s'
-		print 'Mass flows pipes: ', m/n_tubes[0], 'kg/s'
+			print(N.around(N.amax(N.hstack(flux_fp/flux_lims)), decimals=3),)
+		print(' ')
+		print(' ')
+		print('Reflective loss:', N.sum(q_ref)/N.sum(fluxmap*areas[ahr_map]))
+		print('Convective loss:', N.sum(q_conv)/N.sum(fluxmap*areas[ahr_map]))
+		print('Radiative loss:', N.sum(q_rad)/N.sum(fluxmap*areas[ahr_map]))
+		print('Mass flows: ', N.sum(m), m, 'kg/s')
+		print('Mass flows pipes: ', m/n_tubes[0], 'kg/s')
 
 		p_w = []
 		vel=[]
 		pressure_d=[]
-		for f in xrange(len(fp)):
-			print 'Flow path '+str(f+1)+' :'
+		for f in range(int(len(fp))):
+			print('Flow path '+str(f+1)+' :')
 			vels = m[f]/n_tubes[fp[f]]/(N.pi*(D_tubes_i/2.)**2.*HC.rho(T_HC[f][1:]))
-			print 'Velocities: ', N.amin(vels), N.amax(vels), 'm/s'
-			print 'Pressure drop: ', N.add.accumulate(Dp[fp[f]])[-1]/1e5, 'bar'
+			print('Velocities: ', N.amin(vels), N.amax(vels), 'm/s')
+			print('Pressure drop: ', N.add.accumulate(Dp[fp[f]])[-1]/1e5, 'bar')
 			p_w.append(m[f]*N.sum(Dp[fp[f]]/(HC.rho(T_HC[f][1:])+HC.rho(T_HC[f][:-1]))/2.))
 			pressure_d.append(N.add.accumulate(Dp[fp[f]])[-1]/1e5)
-			#print 'Heat transfer coefficient (kW/m2/K): ', h_conv_int[fp[f]]/1e3
+			#print('Heat transfer coefficient (kW/m2/K): ', h_conv_int[fp[f]]/1e3)
 			vel.append(N.amin(vels))
 			vel.append(N.amax(vels))
-		#print vel
-		print 'Pumping work: ', N.sum(p_w), p_w, 'W'
-		print 'Work produced: ', N.sum(q_net)*(1.-T_amb/T_out), 'W'
-		print 'Second law efficiency :', (N.sum(q_net)*(1.-T_amb/T_out)-N.sum(p_w))/N.sum(fluxmap*areas[ahr_map])
-		print 'Number of tubes per bank: ', n_tubes[0]
-		print "Qcon:", N.sum(fluxmap*areas[ahr_map])
-		print 'Tin:',T_in,' Tout:',T_out
-		print 'Peak fraction of allowable: ',  	
+		#print(vel
+		print('Pumping work: ', N.sum(p_w), p_w, 'W')
+		print('Work produced: ', N.sum(q_net)*(1.-T_amb/T_out), 'W')
+		print('Second law efficiency :', (N.sum(q_net)*(1.-T_amb/T_out)-N.sum(p_w))/N.sum(fluxmap*areas[ahr_map]))
+		print('Number of tubes per bank: ', n_tubes[0])
+		print("Qcon:", N.sum(fluxmap*areas[ahr_map]))
+		print('Tin:',T_in,' Tout:',T_out)
+		print('Peak fraction of allowable: ',)  	
 		Fraction=[]		
-		for f in range(len(fp)):
+		for f in range(int(len(fp))):
 			mfp = m[f]*N.ones(len(n_tubes[fp[f]]))
 			nts = N.array(n_tubes[fp[f]])
 			flux_lims = flux_limits(mfp/nts, T_HC[f], flux_limits_file)/1e3
 			flux_fp = q_net[fp[f]]/areas[fp[f]]/1e3
 			flux_fp = N.hstack((flux_fp[0], flux_fp))
-			print N.around(N.amax(N.hstack(flux_fp/flux_lims)), decimals=3),
+			print(N.around(N.amax(N.hstack(flux_fp/flux_lims)), decimals=3),)
 			Fraction.append(N.around(N.amax(N.hstack(flux_fp/flux_lims)), decimals=3))
-		print ' '
+		print(' ')
 
 	if maps_3D:
 
@@ -188,12 +189,12 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cNorm  = colors.Normalize(vmin=0., vmax=1.2)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.plasma)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			ts = ahr[i,0,:]
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
-			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			dt = int((ts[1]-ts[0])/float(angres_per_bank))
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -231,7 +232,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cbar.set_label(r'$\dot{q}^{\prime \prime}_\mathrm{abs}$ [MW.m$^{-2}$]')
 
 		plt.figtext(0.25, 0.01, '(a)')
-		plt.savefig(open(saveloc+'_3D_maps.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_3D_maps.png','wb'), dpi=400)
 		plt.clf()
 		ax = fig.add_subplot(1,2,2, projection='3d', aspect=1.3)
 
@@ -240,11 +241,11 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cNorm  = colors.Normalize(vmin=N.amin(flux), vmax=N.amax(flux))
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.hot)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			ts = ahr[i,0,:]
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)/angres_per_bank*(ts[1]-ts[0]), ts[0]+(j+1.)/angres_per_bank*(ts[1]-ts[0])]
 
 				x = rs*N.cos(thetas)
@@ -280,7 +281,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 
 		plt.figtext(0.75, 0.01, '(b)')
 
-		plt.savefig(open(saveloc+'_3D_maps.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_3D_maps.png','wb'), dpi=400)
 		plt.clf()
 		plt.close(fig)
 
@@ -304,12 +305,12 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.viridis)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			ts = ahr[i,0,:]
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
 			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -346,7 +347,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cbar = plt.colorbar(mp, orientation='horizontal', pad=0.1, shrink=0.8)
 		cbar.set_label(r'$\dot{q}^{\prime \prime}_\mathrm{in}$ [MW.m$^{-2}$]')
 
-		plt.savefig(open(saveloc+'_3D_flux.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_3D_flux.png','wb'), dpi=400)
 		plt.clf()
 
 		fig = plt.figure(figsize=(3,3.4), dpi=1000)
@@ -368,12 +369,12 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.hot)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			ts = ahr[i,0,:]
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
 			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -410,7 +411,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cbar = plt.colorbar(mp, orientation='horizontal', pad=0.1, shrink=0.8)
 		cbar.set_label(r'${T_\mathrm{w,ext}}$ [$^{\circ}$C]')
 
-		plt.savefig(open(saveloc+'_3D_T.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_3D_T.png','wb'), dpi=400)
 		plt.clf()
 		
 		fig = plt.figure(figsize=(3,3.4), dpi=1000)
@@ -432,12 +433,12 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.plasma)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			ts = ahr[i,0,:]
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
 			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -474,7 +475,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		cbar = plt.colorbar(mp, orientation='horizontal', pad=0.1, shrink=0.8)
 		cbar.set_label(r'$\dot{q}^{\prime \prime}_\mathrm{abs}$ [MW.m$^{-2}$]')
 
-		plt.savefig(open(saveloc+'_3D_Q-net.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_3D_Q-net.png','wb'), dpi=400)
 		plt.clf()
 
 	if flow_paths:
@@ -484,7 +485,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		top=0.93
 		
 		plt.subplots_adjust(left=0.5, bottom=bot, right=0.95, top = top)
-		for f in xrange(len(fp)):
+		for f in range(len(fp)):
 			plt.subplot(int(len(fp)/4),4,f+1)
 			if len(fp)>1:
 				plt.text(x=1, y=660, s='Flow path %s'%str(f+1), va='top')
@@ -501,14 +502,14 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		plt.subplot(len(fp),1,1)
 		plt.legend(loc=3,ncol=3, borderaxespad=0, bbox_to_anchor=(0.,1.05))
 
-		#plt.savefig(open(saveloc+'_Temp_fp.png','w'), dpi=400)
+		#plt.savefig(open(saveloc+'_Temp_fp.png','wb'), dpi=400)
 		#plt.close(fig)
 		'''
 		bot=0.08
 		top=0.93
 		if n_banks/len(fp)==2:
 			fig = plt.figure(figsize=(4*2,(2.+(len(fp)-1)*1.1)/1.7), dpi=1000)
-		else: 
+		elif n_banks/len(fp)==1: 
 			fig = plt.figure(figsize=(8*2,(2.+(len(fp)-1)*1.1)/1.7), dpi=1000)
 		plt.subplots_adjust(left=0.15, bottom=bot, right=0.95, top = top)
 		Success=[]
@@ -518,7 +519,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		C_safe=N.array([])
 		C_net=N.array([])
 		S_ratio=N.array([])
-		for f in xrange(len(fp)):
+		for f in range(int(len(fp))):
 			bank_lengths = pipe_lengths[f]
 			bank_lengths_2 = (bank_lengths[1:]+bank_lengths[:-1])/2.
 			if n_banks/len(fp)==2:
@@ -544,13 +545,13 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 				plt.vlines(x=height,ymin=0,ymax=1500,linestyles='--',linewidth=0.5)
 			D=safety_factor*flux_lims[:-1]-q_net[fp[f]]/areas[fp[f]]/1e3 # difference between flux limits and net flux
 			num_pass=n_banks/len(fp)
-			for i in range(num_pass):
+			for i in range(int(num_pass)):
 				Q_net_part=Q_net[n_elems*i:n_elems*(i+1)]
 				Q_safe_part=safe_flux_lims[n_elems*i:n_elems*(i+1)]
 				bank_lengths_part=bank_lengths[n_elems*i:n_elems*(i+1)]
 				X_linear=N.arange(n_elems)
-				LB2=-C_aiming[Strt[f*num_pass+i]]*n_elems*0.25+n_elems/2-1
-				RB2=C_aiming[Strt[f*num_pass+i]]*n_elems*0.25+n_elems/2-1
+				LB2=-C_aiming[int(Strt[int(f*num_pass+i)])]*n_elems*0.25+n_elems/2-1
+				RB2=C_aiming[int(Strt[int(f*num_pass+i)])]*n_elems*0.25+n_elems/2-1
 				LB1=int(24.5-C_aiming[8]*0.5*50)
 				RB1=int(24.5+C_aiming[8]*0.5*50)
 				
@@ -580,11 +581,11 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 				Index=N.where(D_part<0)
 				if Index[0]!=[]:
 					if abs(Index[0][0]-n_elems/2-1)>=abs(Index[0][-1]-n_elems/2-1):
-						boundary_1=Index[0][0]
-						boundary_2=2*(n_elems/2-1)-boundary_1
+						boundary_1=int(Index[0][0])
+						boundary_2=int(2*(n_elems/2-1)-boundary_1)
 					else:
-						boundary_2=Index[0][-1]
-						boundary_1=2*(n_elems/2-1)-boundary_2
+						boundary_2=int(Index[0][-1])
+						boundary_1=int(2*(n_elems/2-1)-boundary_2)
 					D_choose=D_part[boundary_1:boundary_2]
 					index_positive=N.where(D_choose>=0)
 					index_negative=N.where(D_choose<0)
@@ -624,7 +625,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 					plt.xlabel('Flow path length (m)',fontsize=size)
 			ax.tick_params(axis='both', which='major', labelsize=size,direction='in')
 			ax.locator_params(nbins=5)
-		plt.savefig(open(saveloc+'_flux_fp.png','w'), dpi=400)
+		plt.savefig(open(saveloc+'_flux_fp.png','wb'), dpi=200)
 		plt.close(fig)
 		plt.clf()
 		aiming_results=[Success,Positive,A_over,C_safe,C_net,S_ratio]
@@ -634,8 +635,8 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 
 	import matplotlib.gridspec as gridspec
 
-	print "plotting"
-	fileo = open(files,'r')
+	print("plotting")
+	fileo = open(files,'rb')
 	data = pickle.load(fileo)
 	fileo.close()
 	if saveloc == None:
@@ -713,7 +714,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.viridis)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			if (i == N.hstack(fp[flow_path])).any():
 				alpha = 1
 				lw = 0.5
@@ -724,7 +725,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
 			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -789,7 +790,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.hot)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			if (i == N.hstack(fp[flow_path])).any():
 				alpha = 1
 				lw = 0.5
@@ -800,7 +801,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 			hs = ahr[i,1,:]
 			rs = ahr[i,2,0]
 			dt = (ts[1]-ts[0])/float(angres_per_bank)
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				thetas = [ts[0]+float(j)*dt, ts[0]+(j+1.)*dt]
 
 				x = rs*N.cos(thetas)
@@ -918,7 +919,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 		plt.ylabel('${v_\mathrm{Na}}$ [m.s$^{-1}$]')
 
 
-		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'w'), dpi=400)
+		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'wb'), dpi=400)
 		plt.clf()
 		plt.close(fig)
 		
@@ -928,8 +929,8 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 
 	import matplotlib.gridspec as gridspec
 
-	print "plotting"
-	fileo = open(files,'r')
+	print("plotting")
+	fileo = open(files,'rb')
 	data = pickle.load(fileo)
 	fileo.close()
 	if saveloc == None:
@@ -1007,7 +1008,7 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.viridis)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			if (i == N.hstack(fp[flow_path])).any():
 				alpha = 1
 				lw = 0.5
@@ -1016,7 +1017,7 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 				lw = 0
 			ws = wh[i,0,:]
 			hs = wh[i,1,:]
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				x = ws-width/2.
 				y = ws*0
 
@@ -1069,7 +1070,7 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 		cNorm  = colors.Normalize(vmin, vmax)
 		mp = cm.ScalarMappable(norm=cNorm, cmap=cm.hot)
 
-		for i in xrange(len(flux)):
+		for i in range(int(len(flux))):
 			if (i == N.hstack(fp[flow_path])).any():
 				alpha = 1
 				lw = 0.5
@@ -1078,7 +1079,7 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 				lw = 0
 			ws = wh[i,0,:]
 			hs = wh[i,1,:]
-			for j in xrange(angres_per_bank):
+			for j in range(int(angres_per_bank)):
 				x = ws-width/2.
 				y = ws*0
 
@@ -1190,13 +1191,13 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 		plt.ylabel('${v_\mathrm{Na}}$ [m.s$^{-1}$]')
 
 
-		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'w'), dpi=400)
+		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'wb'), dpi=400)
 		plt.clf()
 		plt.close(fig)
 
 def pipes_differential_heating(flux_table_detailed, receiver):
 
-	fileo = open(receiver,'r')
+	fileo = open(receiver,'rb')
 	data = pickle.load(fileo)
 	areas = data['areas']
 	fp = data['fp']
@@ -1205,7 +1206,7 @@ def pipes_differential_heating(flux_table_detailed, receiver):
 	n_tubes = data['n_tubes']
 	wh_map = data['wh_map']
 
-	#print areas, fp, n_tubes, wh_map, n_elems
+	#print(areas, fp, n_tubes, wh_map, n_elems
 	fluxmap = N.loadtxt(flux_table_detailed, skiprows=7, delimiter=',', usecols=N.arange(1,n_banks*int(n_tubes[0])+1))[::-1]
 	fluxmap = N.array(fluxmap*1000.)
 	
@@ -1213,7 +1214,7 @@ def pipes_differential_heating(flux_table_detailed, receiver):
 	plt.figure()
 	plt.subplot(211)
 
-	plt.plot(range(len(Q_tubes)), Q_tubes/1e3)
+	plt.plot(range(int(len(Q_tubes))), Q_tubes/1e3)
 	plt.vlines(N.linspace(0,n_banks*n_tubes[0], n_banks+1)-.5, 0, 50)
 
 	plt.xlim(0,n_banks*n_tubes[0]-1)
@@ -1225,9 +1226,9 @@ def pipes_differential_heating(flux_table_detailed, receiver):
 	q_net = data['q_net']
 
 	banks = [[3,2,1,0], [4,5,6,7]]
-	print q_net
-	for f in range(len(fp)):
-		for b in range(n_banks/2):
+	print(q_net)
+	for f in range(int(len(fp))):
+		for b in range(int(n_banks/2)):
 			T_inlets = T_HC[f][b*n_elems]
 			T_outlet = T_HC[f][(b+1)*n_elems-1]
 			#q_net_avg = N.sum(q_net[fp[f]][b*n_elems:(b+1)*n_elems-1])/n_tubes[0]
@@ -1235,14 +1236,14 @@ def pipes_differential_heating(flux_table_detailed, receiver):
 			end = int(start+n_tubes[0])
 			if start>end:
 				start, end = end, start
-			print start, end
+			print(start, end)
 
 			Q_tubes_avg = N.sum(Q_tubes[start:end])/n_tubes[0]
 
 			T_guess = T_inlets+(T_outlet-T_inlets)*(1.+(Q_tubes[start:end]-Q_tubes_avg)/Q_tubes_avg)-T_outlet
-			print T_outlet-273.15, T_inlets-273.15
-			print T_guess-273.15
-			plt.plot(range(start, end), T_guess)
+			print(T_outlet-273.15, T_inlets-273.15)
+			print(T_guess-273.15)
+			plt.plot(range(int(start), int(end)), T_guess)
 	plt.vlines(N.linspace(0,n_banks*n_tubes[0], n_banks+1)-.5, -15, 15)
 
 	plt.xlabel('Pipes')

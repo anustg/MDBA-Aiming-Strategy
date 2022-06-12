@@ -5,7 +5,7 @@ class Na():
 	Fink JK, Leibowitz L. Thermodynamic and Transport Properties of Sodium Liquid and Vapour. Reactor Engineering Division, Argonne National Laboratory; 1995.
 	'''
 	def __init__(self, force_Re_limits=False):
-		print 'Na HC'
+		print('Na HC')
 		self.Tmin = 371.
 		self.Tmax = 1255.
 		self.force_Re_limits = force_Re_limits
@@ -18,7 +18,7 @@ class Na():
 			Tlow = (T<self.Tmin)
 			Thigh = (T>self.Tmax)
 		if Tlow or Thigh:
-			print "Temperature of liquid sodium outside of correlations range"
+			#print("Temperature of liquid sodium outside of correlations range"
 			return False
 		else:
 			return True
@@ -88,19 +88,19 @@ class Na():
 					# Nusselt:
 					Nu = 7.+0.025*(Re*Pr)**0.8
 				else:
-					print 'Re:', Re
-					print 'V:',V, '[m.s-1]'
-					print 'Liquid sodium reynolds number outside of Lyon-Martinelli correlation range (1e4 <= Re <= 1e6)'
+					#print('Re:', Re
+					#print('V:',V, '[m.s-1]'
+					#print('Liquid sodium reynolds number outside of Lyon-Martinelli correlation range (1e4 <= Re <= 1e6)'
 					return N.nan
 			else:
-				print "Reynolds limits forced"
-				print 'Maximum Reynolds:', N.amax(Re)
+				print("Reynolds limits forced")
+				print('Maximum Reynolds:', N.amax(Re))
 				# Nusselt:
 				Nu = 7.+0.025*(Re*Pr)**0.8
 				
 		else:
-			print Pr
-			print 'Liquid sodium Prandtl number outside of Lyon-Martinelli correlation range(Pr <= 0.1)'
+			print(Pr)
+			print('Liquid sodium Prandtl number outside of Lyon-Martinelli correlation range(Pr <= 0.1)')
 			return N.nan
 		# Heat transfer coefficient:
 		u = Nu*k/(D_tube_in)
@@ -120,14 +120,14 @@ class Na():
 				# Nusselt:
 				Nu = 7.+0.025*(Re*Pr)**0.8
 			else:
-				print 'Re:',Re
-				print 'V:',V, '[m.s-1]'
-				print 'Liquid sodium reynolds number outside of Lyon-Martinelli correlation range (1e4 <= Re <= 1e6)'
+				print('Re:',Re)
+				print('V:',V, '[m.s-1]')
+				print('Liquid sodium reynolds number outside of Lyon-Martinelli correlation range (1e4 <= Re <= 1e6)')
 				return N.nan
 				
 		else:
-			print Pr
-			print 'Liquid sodium Prandtl number outside of Lyon-Martinelli correlation range(Pr <= 0.1)'
+			print(Pr)
+			print('Liquid sodium Prandtl number outside of Lyon-Martinelli correlation range(Pr <= 0.1)')
 			return N.nan
 		# Heat transfer coefficient:
 		u = Nu*k/(D_tube_in)
@@ -160,7 +160,7 @@ class Solar_salt():
 	H. Benoit et al. Renewable and Sustainable Energy Reviews 55 (2016) 298-315
 	'''
 	def __init__(self):
-		print 'Solar salt HC'
+		print('Solar salt HC')
 		self.Tmin = 533.
 		self.Tmax = 873.
 
@@ -172,7 +172,7 @@ class Solar_salt():
 			Tlow = (T<self.Tmin)
 			Thigh = (T>self.Tmax)
 		if Tlow or Thigh:
-			print "Temperature of Solar Salt outside of correlations range"
+			print("Temperature of Solar Salt outside of correlations range")
 			return False
 		else:
 			return True
@@ -269,7 +269,7 @@ class Solar_salt():
 			Nu[Gnielinski] = Nu_3[Gnielinski]
 
 		else:
-			print 'Solar salt Prandtl or Reynolds number outside of Wu et al. correlation range'
+			print('Solar salt Prandtl or Reynolds number outside of Wu et al. correlation range')
 			return N.nan
 		# Heat transfer coefficient:
 		u = Nu*k/(D_tube_in)

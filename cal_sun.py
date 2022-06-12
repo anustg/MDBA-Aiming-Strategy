@@ -191,25 +191,27 @@ class SunPosition:
 
 if __name__=='__main__':
 	# example: PS10, summer solstice, solar noon
-	latitude=34.96
+	latitude=34.85
 	
 	sun=SunPosition()
-	dd=sun.days(22, 'Jun')
+	
+	dd=sun.days(21, 'Jun')
 	delta=sun.declination(dd)
-	print 'Declination angle', delta
-
-
+	print('Declination angle', delta)
+	
+	#delta=-22.2927647419584
+	
 	daytime,sunrise=sun.solarhour(delta, latitude)
-	print 'Day timeS', daytime
-	print 'sun rise', sunrise
-	print ''
+	print('Day timeS', daytime)
+	print('sun rise', sunrise)
+	print('')
 	
 	
-	omega=3.*15 # solar noon
+	omega=45. # solar noon
 	theta=sun.zenith(latitude, delta, omega)
 	phi=sun.azimuth(latitude, theta, delta, omega)
-	print 'elevation', 90.-theta
-	print 'azimuth', phi
+	print('elevation', 90.-theta)
+	print('azimuth', phi)
 
 	
 

@@ -9,7 +9,7 @@ def check_valid(prop):
 			Tlow = (T<self.Tmin)
 			Thigh = (T>self.Tmax)
 		if Tlow or Thigh:
-			print "Temperature outside of correlations range"
+			print("Temperature outside of correlations range")
 			return N.nan
 		else:
 			return prop(self, T)
@@ -62,7 +62,7 @@ class Inconel601(Pipe_material):
 		return -4.983e4*T**2.-3.264e6*T+2.105e11
 
 	@check_valid
- 	def nu(self, T):
+	def nu(self, T):
 		return 7.194e-11*T**3.-8.477e-8*T**2.+1.073e-4*T+2.462e-1
 
 	@check_valid
