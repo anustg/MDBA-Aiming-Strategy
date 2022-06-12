@@ -86,8 +86,8 @@ class Bill_receiver():
 		self.width = width
 		self.height = height
 
-		self.n_banks = n_banks
-		self.n_elems = n_elems
+		self.n_banks = int(n_banks)
+		self.n_elems = int(n_elems)
 
 		# Rectangular mesh array. Convention is to take it starting East and counter-clockwise and starting from the bottom of the receiver.
 		wh = N.zeros((n_banks*n_elems, 2, 2))
@@ -332,8 +332,8 @@ class Cyl_receiver():
 		self.radius = radius
 		self.height = height
 
-		self.n_banks = n_banks
-		self.n_elems = n_elems
+		self.n_banks = int(n_banks)
+		self.n_elems = int(n_elems)
 		# Cylindrical mesh array. Convention is to take it starting East and counter-clockwise and starting from the bottom of the receiver.
 		ahr = N.zeros((n_banks*n_elems, 3, 2))
 		ahr[:,0,0], ahr[:,0,1] = N.tile(ang[:-1], n_elems), N.tile(ang[1:], n_elems)
@@ -445,22 +445,23 @@ class Cyl_receiver():
 			nf = 2                            # Number of flowpaths
 
 			if (self.n_banks%nf) != 0:
-				print 'Mismatch between the flow path and the discretisation.'
+				print('Mismatch between the flow path and the discretisation.')
 				stop
 			elif (nf%2) != 0:
-				print 'Error, ', nf, ' flow-paths. The number of flow-paths must be even for "NES-NWS".'
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "NES-NWS".')
 				stop
 
-			vpasses = self.n_banks/nf         # Number of vertical-passes per flow-path
+			vpasses = int(self.n_banks/nf)         # Number of vertical-passes per flow-path
 
-			for f in xrange(nf):
+			for f in range(nf):
 				# For each flow-path, fill the flow-path list of sequential elements in which the HC goes in order.
-				fp = N.zeros(len(self.areas)/nf, dtype=N.int16)
-				flux_fp = N.zeros(len(self.areas)/nf)
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
 
 				# For each pass, one per bank of pipe, find the element of the fluxmap that are being seen by the fluid.
 				half_pass = vpasses
 				for i in range(vpasses):
+					i=int(i)
 					if i< half_pass:
 						if f%2:
 							strt = self.n_banks/2-1-(f-1)/2*half_pass-i
@@ -476,7 +477,7 @@ class Cyl_receiver():
 							strt = (f/2+1)*(vpasses-half_pass)-(i-half_pass)-1
 							end = strt+self.n_banks*self.n_elems
 
-					elems = N.arange(strt, end, self.n_banks)
+					elems = N.arange(strt, end, self.n_banks).astype(int)
 					Strt.append(strt)
 
 					if (i%2.)==0:
@@ -937,10 +938,10 @@ class Cyl_receiver():
 		self.pipe_lengths = []
 
 		if h_conv_ext == 'WSVH':
-			from .Convection_loss import cyl_conv_loss_coeff_WSVH
+			from Convection_loss import cyl_conv_loss_coeff_WSVH
 			self.h_conv_ext = cyl_conv_loss_coeff_WSVH(self.height, 2.*self.radius, self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		if h_conv_ext == 'SK':
-			from .Convection_loss import cyl_conv_loss_coeff_SK
+			from Convection_loss import cyl_conv_loss_coeff_SK
 			self.h_conv_ext = cyl_conv_loss_coeff_SK(self.height, 2.*self.radius, self.D_coating_o/2., self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		else:
 			self.h_conv_ext = h_conv_ext

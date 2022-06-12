@@ -71,7 +71,7 @@ class one_key_start:
 		self.abs_t=abs_t
 		self.ems_t=ems_t
 
-	def run_SOLSTICE(self, dni, phi, elevation, att_factor, num_rays,csv, user_folder=False, ufolder='vtk'):
+	def run_SOLSTICE(self, dni, phi, elevation, att_factor, num_rays,csv, casedir):
 		"""
 		New function to create a YAML file and run SOLSTICE.
 		Modified from Wang's original
@@ -94,14 +94,6 @@ class one_key_start:
 			phi = (phi+360.0)%(360.0)
 		print('azi: %s [deg]\tele: %s [deg]\tdni: %s [W/m2]'%(phi, elevation, dni))
 
-		# Defining folder to save yaml and simul files
-		if ufolder:
-			vtk_path='%s/%s'%(self.folder,ufolder)
-		else:
-			vtk_path='%s/vtk'%self.folder
-
-		if os.path.exists(vtk_path):
-			shutil.rmtree(vtk_path)
 
 		# Creating SOLSTICE scene
 		scene=SolsticeScene(
@@ -118,15 +110,15 @@ class one_key_start:
 			num_bundle=self.num_bundle
 		)
 
-		if not os.path.exists(vtk_path):
-			os.makedirs(vtk_path)
+		if not os.path.exists(casedir):
+			os.makedirs(casedir)
 
 		# Generate YAML file
 		scene.gen_YAML()
 
 		# Run SOLSTICE
 		scene.runSOLSTICE(
-			savefile=vtk_path,
+			savefile=casedir,
 			view=True
 			)
 
@@ -146,7 +138,7 @@ class one_key_start:
 			return np.exp(-b * x)
 		def fun_two(x):
 			return 0.99321-0.0001176*x+1.97e-8*x**2
-		xdata = np.linspace(0, np.max(foc), np.max(foc)*100)
+		xdata = np.linspace(0, np.max(foc), int(np.max(foc)*100))
 		y = fun_two(xdata)
 		ydata = y
 		popt, pcov = curve_fit(func, xdata, ydata)
@@ -207,6 +199,7 @@ class one_key_start:
 				flux_limits_file=flux_limits_file,
 				C_aiming=self.C_aiming)
 
+		Strt=np.array(Strt).astype(int)
 		return results,aiming_results,Strt
 
 	def aiming_loop(self,C_aiming,Exp,A_f):
@@ -216,9 +209,9 @@ class one_key_start:
 
 		# The input for optical modelling
 		self.C_aiming=C_aiming
-		print C_aiming
-		print Exp
-		print A_f
+		print(C_aiming)
+		print(Exp)
+		print(A_f)
 		att_factor=self.attenuation(self.csv_trimmed)
 
 		# Change of aiming points 
@@ -240,14 +233,15 @@ class one_key_start:
 				elevation=self.elevation,
 				att_factor=att_factor,
 				num_rays=self.num_rays,
-				csv=self.csv_aiming)
+				csv=self.csv_aiming,
+				casedir=self.folder)
 
 		# Optical postprocessing
 		eta,q_results,eta_exc_intec=proces_raw_results(
-				'%s/vtk/simul'% self.folder,
-				'%s/vtk'% self.folder)
+				'%s/simul'% self.folder,
+				self.folder)
 		eff_interception=eta/eta_exc_intec
-		print 'Interception efficiency: ' + str(eff_interception)
+		print('Interception efficiency: ' + str(eff_interception))
 
 		# Read flux map
 		read_data(
@@ -261,9 +255,10 @@ class one_key_start:
 
 		# Thermal simulation
 		results,aiming_results,Strt=self.HT_model(20.,0.)
+		Strt=np.array(Strt).astype(int)
 
 		# Print aiming_results
-		print aiming_results[1]
+		print(aiming_results[1])
 		return aiming_results,eff_interception,Strt
 
 	def get_I_Meinel(self,elevation):
@@ -450,4 +445,4 @@ if __name__=='__main__':
 	A_start = 0.5
 	# Running aiming for design point
 	Model.sweeping_algorithm(C_start,E_start,A_start)
-
+	#Model.New_search_algorithm()

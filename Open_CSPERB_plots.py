@@ -648,13 +648,13 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 			ax.tick_params(axis='both', which='major', labelsize=size,direction='in')
 			ax.locator_params(nbins=5)
 		plt.savefig(open(saveloc+'_flux_fp.png','wb'), dpi=200)
-		plt.close(fig)
+		plt.close()
 		plt.clf()
 		aiming_results=[Success,Positive,A_over,C_safe,C_net,S_ratio]
 	return results,aiming_results,vel_max
 
 def simple_tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, flow_paths=True, saveloc=None, billboard=False, flux_limits_file=None,C_aiming=None):
-	print "plotting"
+	print("plotting")
 	fileo = open(files,'r')
 	data = pickle.load(fileo)
 	fileo.close()
@@ -711,7 +711,7 @@ def simple_tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=T
 	
 	plt.rc('font', size=8)
 	eff_rec=N.sum(q_net)/N.sum(fluxmap*areas[ahr_map])
-	print 'Receiver efficiency: '+str(eff_rec)
+	print('Receiver efficiency: '+str(eff_rec))
 	# Qin, eff_abs,eff_ems,T_ext_mean,h_ext,q_refl,q_emi,q_conv,eff_rec
 	#print T_ext
 	#print N.average(T_ext),N.sqrt(N.sqrt(N.average(T_ext**4))),h_conv_ext

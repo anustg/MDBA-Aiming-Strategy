@@ -109,7 +109,7 @@ def read_data(folder,r_height,r_diameter,num_bundle,bins,flux_file=False,flux_ma
 		cbar3.ax.tick_params(labelsize=20) 
 		ax1.tick_params(axis='both', which='major', labelsize=20)
 		plt.tight_layout()
-		plt.savefig(open('%s/flux_map.png'%folder,'w'), dpi=400)
+		plt.savefig(open('%s/flux_map.png'%folder,'wb'), dpi=400)
 		plt.close(fig)
 		
 	return max_flux
