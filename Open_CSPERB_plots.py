@@ -511,6 +511,8 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 			fig = plt.figure(figsize=(4*2,(2.+(len(fp)-1)*1.1)/1.7), dpi=1000)
 		elif n_banks/len(fp)==1: 
 			fig = plt.figure(figsize=(8*2,(2.+(len(fp)-1)*1.1)/1.7), dpi=1000)
+		elif n_banks/len(fp)==3:
+			fig = plt.figure(figsize=(4*2,(2.+(len(fp)-1)*1.1)/1.7*1.8), dpi=1000)
 		plt.subplots_adjust(left=0.15, bottom=bot, right=0.95, top = top)
 		Success=[]
 		Positive=[]
@@ -522,18 +524,27 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		for f in range(int(len(fp))):
 			bank_lengths = pipe_lengths[f]
 			bank_lengths_2 = (bank_lengths[1:]+bank_lengths[:-1])/2.
-			if n_banks/len(fp)==2:
+			
+			if n_banks/len(fp)==1:
+				ax=plt.subplot(int(len(fp)/4),4,f+1)
+				size=18
+				plt.text(x=bank_lengths[30], y=1300, s='T%s'%Strt[f], ha='right',fontsize=size)
+			elif n_banks/len(fp)==2:
 				ax=plt.subplot(int(len(fp)/2),2,f+1)
 				size=12
 				plt.text(x=bank_lengths[30], y=1300, s='T%s'%(Strt[2*f]+1), ha='right',fontsize=size)
 				plt.text(x=bank_lengths[80], y=1000, s='T%s'%(Strt[2*f+1]+1), ha='right',fontsize=size)
-			else:
-				ax=plt.subplot(int(len(fp)/4),4,f+1)
-				size=18
-				plt.text(x=bank_lengths[30], y=1300, s='T%s'%Strt[f], ha='right',fontsize=size)
-				
+			elif n_banks/len(fp)==3:
+				ax=plt.subplot(int(len(fp)/2),2,f+1)
+				size=12
+				plt.text(x=bank_lengths[30], y=1300, s='T%s'%(Strt[3*f]+1), ha='right',fontsize=size)
+				plt.text(x=bank_lengths[80], y=1000, s='T%s'%(Strt[3*f+1]+1), ha='right',fontsize=size)
+				plt.text(x=bank_lengths[120], y=800, s='T%s'%(Strt[3*f+2]+1), ha='right',fontsize=size)
 			if len(fp)>1:
-				plt.text(x=bank_lengths[n_elems], y=1100, s='Fp %s'%str(f+1), ha='right',fontsize=size)
+				if n_banks/len(fp)==3:
+					plt.text(x=bank_lengths[120], y=1300, s='Fp %s'%str(f+1), ha='right',fontsize=size)
+				else:
+					plt.text(x=bank_lengths[n_elems], y=1500, s='Fp %s'%str(f+1), ha='right',fontsize=size)
 			
 			plt.plot(bank_lengths_2, q_net[fp[f]]/areas[fp[f]]/1e3, label=r'${\dot{q}^{\prime \prime}_\mathrm{abs}}$', color='0.6')
 			flux_lims = flux_limits_V(V[f], T_HC[f], flux_limits_file)/1e3
@@ -554,27 +565,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 				RB2=C_aiming[int(Strt[int(f*num_pass+i)])]*n_elems*0.25+n_elems/2-1
 				LB1=int(24.5-C_aiming[8]*0.5*50)
 				RB1=int(24.5+C_aiming[8]*0.5*50)
-				
-				# linear regression to get slopes
-				Data={'X_linear': bank_lengths_part[int(LB1):int(RB1)], 'Q_safe_part': Q_safe_part[int(LB1):int(RB1)]}
-				df = DataFrame(Data,columns=['X_linear','Q_safe_part'])
-				X = df[['X_linear']]
-				Y = df['Q_safe_part']
-				regr = linear_model.HuberRegressor()
-				regr.fit(X, Y)
-				C0=regr.intercept_
-				C=regr.coef_
-				C_safe=N.append(C_safe,C)
-				
-				Data={'X_linear': bank_lengths_part[int(LB1):int(RB1)], 'Q_net_part': Q_net_part[int(LB1):int(RB1)]}
-				df = DataFrame(Data,columns=['X_linear','Q_net_part'])
-				X = df[['X_linear']] 
-				Y = df['Q_net_part']
-				regr = linear_model.HuberRegressor()
-				regr.fit(X, Y)
-				C0_1=regr.intercept_
-				C_1=regr.coef_
-				C_net=N.append(C_net,C_1)
+				#print(LB2,RB2)
 				
 				# calculation of Aover
 				D_part=D[n_elems*i:n_elems*(i+1)] # for this tube bank
@@ -592,23 +583,50 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 					index_negative2=N.where(D_part<0)
 					Success.append(sum(D_choose[index_positive])+5.*sum(D_choose[index_negative])>0.)
 					if index_negative!=[]:
-						Positive.append(False)
+						#Positive.append(False)
 						A_over=N.append(A_over,-sum(D_choose[index_negative]))
 				else:
-					Positive.append(True)
+					#Positive.append(True)
 					Success.append(True)
 					A_over=N.append(A_over,0.)	
 					index_negative2=N.array([])
-				
-				# for shape exponent
-				index_negative2=N.asarray(index_negative2)
-				if index_negative2!=[]:
-					index_negative2=index_negative2[0]
-					#print f,i,LB2,RB2,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]]),-sum(D_part[index_negative2])
-					S_ratio=N.append(S_ratio,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]])/-sum(D_part[index_negative2]))
-				else:
-					S_ratio=N.append(S_ratio,0.5)
-					
+				Positive=A_over<10.
+				if overflux==True:
+					try:
+						# linear regression to get slopes
+						Data={'X_linear': bank_lengths_part[int(LB1):int(RB1)], 'Q_safe_part': Q_safe_part[int(LB1):int(RB1)]}
+						df = DataFrame(Data,columns=['X_linear','Q_safe_part'])
+						X = df[['X_linear']]
+						Y = df['Q_safe_part']
+						regr = linear_model.HuberRegressor()
+						regr.fit(X, Y)
+						C0=regr.intercept_
+						C=regr.coef_
+						C_safe=N.append(C_safe,C)
+						
+						Data={'X_linear': bank_lengths_part[int(LB1):int(RB1)], 'Q_net_part': Q_net_part[int(LB1):int(RB1)]}
+						df = DataFrame(Data,columns=['X_linear','Q_net_part'])
+						X = df[['X_linear']] 
+						Y = df['Q_net_part']
+						regr = linear_model.HuberRegressor()
+						regr.fit(X, Y)
+						C0_1=regr.intercept_
+						C_1=regr.coef_
+						C_net=N.append(C_net,C_1)
+						
+						# for shape exponent
+						index_negative2=N.asarray(index_negative2)
+						if index_negative2!=[]:
+							index_negative2=index_negative2[0]
+							#print(f,i,LB2,RB2,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]]),-sum(D_part[index_negative2])
+							S_ratio=N.append(S_ratio,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]])/-sum(D_part[index_negative2]))
+						else:
+							S_ratio=N.append(S_ratio,0.5)
+					except:
+						C_safe=N.append(C_safe,-50.)
+						C_net=N.append(C_net,-50)
+						S_ratio=N.append(S_ratio,0.5)
+						print("An exception occurred")
 			if n_banks/len(fp)==2:
 				if f%2==0:
 					plt.ylabel('Flux (kW.m$^{-2}$)',fontsize=size)
@@ -923,8 +941,6 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 		plt.clf()
 		plt.close(fig)
 		
-		
-
 def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium receiver_CMI/ref_case_result_1', fps=[0], saveloc=None, flux_limits_file=None):
 
 	import matplotlib.gridspec as gridspec

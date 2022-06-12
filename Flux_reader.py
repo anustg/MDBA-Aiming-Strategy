@@ -13,7 +13,7 @@ Direction is: from East to N to W to S, from bottom to top.
 
 def read_data(folder,r_height,r_diameter,num_bundle,bins,flux_file=False,flux_map=False):
 	elem_area=r_diameter*np.sin(np.pi/num_bundle)*r_height/bins
-	simul='%s/vtk/simul' % folder
+	simul='%s/simul' % folder
 	#print simul
 	with open(simul) as f:
 		lines = f.readlines()
@@ -62,7 +62,10 @@ def read_data(folder,r_height,r_diameter,num_bundle,bins,flux_file=False,flux_ma
 		Flux[i,0]=r_height-0.5*r_height/bins-r_height/bins*i 
 		for j in range(1,num_bundle+1):
 			Flux[i,j]=Flux_blender[bins*(j-1)+i]
-			#print i,j,Flux[i,j],bins*(j-1)+i
+	Flux_bank=np.array([])
+	for i in range(1,num_bundle+1):
+		Flux_bank=np.append(Flux_bank,sum(Flux[:,i])*r_height*r_diameter*np.pi/50/num_bundle)
+	
 	if flux_file==True:
 		title=np.array(7*(num_bundle+1))
 		title=np.array(['Flux intensity plot (units kW/m2)'])
@@ -104,10 +107,8 @@ def read_data(folder,r_height,r_diameter,num_bundle,bins,flux_file=False,flux_ma
 		ax1.tick_params(axis='both', which='major', labelsize=20)
 		#plt.show()
 		plt.savefig(open('%s/flux_map.png'%folder,'w'), dpi=400)
-		plt.clf()
 		plt.close(fig)
 		
-	print max_flux
 	return max_flux
 	
 
@@ -115,6 +116,6 @@ if __name__=='__main__':
 	folder=path[0]
 	r_height=24.
 	r_diameter=16.
-	num_bundle=12
+	num_bundle=16
 	bins=50 # the vertial binning number
 	read_data(folder,r_height,r_diameter,num_bundle,bins,flux_file=True,flux_map=True)

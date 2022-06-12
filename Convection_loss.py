@@ -107,7 +107,7 @@ def cyl_conv_loss_coeff_SK(height, diameter, pipe_radius, velocity, T_wall, T_am
 		return y
 
 	def Nu_f_interpolated(ks_D, Re):
-		ks_D_data = [0., 75e-5, 300e-5, 900e-5]
+		ks_D_data = N.r_[0., 75e-5, 300e-5, 900e-5]
 		x0, x1 = N.amax(ks_D_data[ks_D_data<=ks_D]), N.amin(ks_D_data[ks_D_data>=ks_D])
 		x_inter = [x0, x1]
 		Nu_f_inter = []
@@ -142,9 +142,12 @@ def cyl_conv_loss_coeff_SK(height, diameter, pipe_radius, velocity, T_wall, T_am
 	# Natural convection:
 	Nu_n = 0.098*Gr**(1./3.)*(T_wall/T_amb)**-0.14
 	h_n = k*Nu_n/H
-
-	h = (h_f**3.2+(N.pi/2.*h_n)**3.2)**(1./3.2)
-
+	#print height, diameter, pipe_radius, velocity, T_wall, T_amb,h_n,h_f
+	if h_f>1e-6:
+		h = (h_f**3.2+(N.pi/2.*h_n)**3.2)**(1./3.2)
+	else:
+		h=0.
+		
 	return h
 
 if __name__ == '__main__':

@@ -781,6 +781,70 @@ class Cyl_receiver():
 				self.fp.append(fp)
 				self.flux_fp.append(flux_fp)
 				self.areas_fp.append(self.areas[fp])
+		
+		if option[:5] == 'cm3Ni':
+			# Crossed multiple vertical flow-paths from North and introduced at the top. Same as previous but all inlet is introduced on the North face and progresses until filling the North facing half-cylinder. Afterwards, the flow-paths are "crossed" (central symmetry using the cylinder axis) and the rest of the progression goes from the west and east towards South before exiting the receiever.
+
+			self.fp = []
+			self.flux_fp = []
+			self.areas_fp = []
+			
+			if option[5] == 't':
+				top_injection = True
+			elif option[5] == 'b':
+				top_injection = False
+			nf = int(option[6:])
+
+			if (self.n_banks%nf) != 0:
+				print('Mismatch between the flow path and the discretisation.')
+				stop
+			elif (nf%2) != 0:
+				print('Error, ', nf, ' flow-paths. The number of flow-paths must be even for "cmvNit".')
+				stop
+			vpasses = int(self.n_banks/nf)
+			#Strt2=N.array([6,3,0,5,8,11,7,2,1,4,9,10])
+			#Strt3=N.array([6,2,1,5,9,10,7,3,0,4,8,11])
+			Strt4=N.array([6,2,0,5,9,11,7,3,1,4,8,10])
+			#Strt6=N.array([6,7,0,5,4,11,8,9,1,3,2,10])
+			for f in range(nf):
+				# For each flow-path, fille the flow-path list of sequential elements in which the HC goes in order.
+				fp = N.zeros(int(len(self.areas)/nf), dtype=N.int16)
+				flux_fp = N.zeros(int(len(self.areas)/nf))
+				# for each pass, one per bank of pipe, find the elemenst of the fluxmap that are being seen by the fluid.
+				half_pass = int(N.ceil(vpasses/2.))
+				for i in range(vpasses):
+					strt = Strt4[f*vpasses+i]
+					end = strt+self.n_banks*self.n_elems
+					'''
+					if i< half_pass:
+						if f%2:
+							strt = self.n_banks/2-1-(f-1)/2*half_pass-i
+							end = strt+self.n_banks*self.n_elems
+						else:
+							strt = self.n_banks/2+f/2*half_pass+i
+							end = strt+self.n_banks*self.n_elems
+					else:
+						if f%2:
+							strt = self.n_banks-((f-1)/2+1)*(vpasses-half_pass)+(i-half_pass)
+							end = strt+self.n_banks*self.n_elems
+						else:
+							strt = (f/2+1)*(vpasses-half_pass)-(i-half_pass)-1
+							end = strt+self.n_banks*self.n_elems
+					'''
+					elems = N.arange(strt, end, self.n_banks)
+					Strt.append(strt)
+					
+					if (i%2.)==0:
+						elems = elems[::-1] # if even pass, go down.
+					
+					if top_injection == False:
+						elems = elems[::-1]
+					fp[i*self.n_elems: (i+1)*self.n_elems] = elems
+					flux_fp[int(i*self.n_elems): int((i+1)*self.n_elems)] = flatmap[elems.astype(int)]
+				
+				self.fp.append(fp)
+				self.flux_fp.append(flux_fp)
+				self.areas_fp.append(self.areas[fp])
 		self.Strt=Strt
 		return Strt
 		
@@ -922,10 +986,10 @@ class Cyl_receiver():
 			if N.isnan(N.average(T_ext)): ########################
 				h_conv_ext = 20.
 			if h_conv_ext == 'WSVH':
-				from Convection_loss import cyl_conv_loss_coeff_WSVH
+				from .Convection_loss import cyl_conv_loss_coeff_WSVH
 				self.h_conv_ext = cyl_conv_loss_coeff_WSVH(self.height, 2.*self.radius, self.air_velocity, N.average(T_ext), T_amb)
 			if h_conv_ext == 'SK':
-				from Convection_loss import cyl_conv_loss_coeff_SK
+				from .Convection_loss import cyl_conv_loss_coeff_SK
 				self.h_conv_ext = cyl_conv_loss_coeff_SK(self.height, 2.*self.radius, self.D_coating_o/2., self.air_velocity, N.average(T_ext), T_amb)
 			else:
 				self.h_conv_ext = h_conv_ext
@@ -942,8 +1006,8 @@ class Cyl_receiver():
 		file_o.close()
 		
 if __name__=='__main__':
-	from HC import *
-	from Tube_materials import Inconel740H
+	from .HC import *
+	from .Tube_materials import Inconel740H
 
 	height = 24.
 	diameter = 16.
@@ -962,7 +1026,7 @@ if __name__=='__main__':
 	rec.balance(HC=HC, material=Inconel740H(), T_in=520+273.15, T_out=740+273.15, T_amb=20.+273.15, h_conv_ext='SK', filesave=save_file,air_velocity=5.)
 	
 	
-	from Open_CSPERB_plots import *
+	from .Open_CSPERB_plots import *
 	flux_limits_file='%s/201015_N07740_thermoElasticPeakFlux_velocity/N07740_OD%s_WT1.20_peakFlux_vel.csv'%(path[0],round(D_tubes_o*1000,2))
 	tower_receiver_plots(files=save_file, efficiency=False, maps_3D=False, flux_map=False, flow_paths=True,saveloc=None, billboard=False, flux_limits_file=flux_limits_file)
 	print("done")
