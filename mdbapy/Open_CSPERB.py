@@ -1063,9 +1063,9 @@ class Cyl_receiver():
 				self.h_conv_ext = h_conv_ext
 			convergence_tot = N.abs(N.hstack(self.T_ext)-T_ext_old)/N.hstack(self.T_ext)
 		if N.isnan(N.hstack(self.V).any()):
-			print('Energy balance error')
+			print('	Energy balance error')
 		else:
-			print('Energy balance OK')
+			print('	Energy balance OK')
 		import pickle
 		data = {'ahr': self.ahr, 'radius':self.radius, 'height':self.height, 'n_banks':self.n_banks, 'n_elems':self.n_elems, 'D_tubes_o':self.D_tubes_o, 'D_tubes_i':self.D_tubes_i, 'eff_abs':self.eff_abs, 'abs_t':self.abs_t, 'eff_ems':self.eff_ems, 'ems_t':self.ems_t, 'k_t':material.k(self.T_w_int), 'ahr_map':self.ahr_map, 'fp':self.fp, 'areas':self.areas, 'areas_fp':self.areas_fp, 'HC':HC, 'T_in':self.T_in, 'T_out':self.T_out, 'h_conv_ext':self.h_conv_ext, 'h':self.h, 'm':self.m, 'flux_in':self.flux_fp, 'q_net':self.q_net, 'q_rad':self.q_rad, 'q_ref':self.q_ref, 'q_conv_ext':self.q_conv, 'T_amb':T_amb, 'T_HC':self.T_HC, 'T_w_int':self.T_w_int, 'T_ext':self.T_ext, 'h_conv_int':self.h_conv_int, 'V': self.V, 'fluxmap':self.fluxmap, 'n_tubes':self.n_tubes, 'Dp':self.Dp, 'pipe_lengths':self.pipe_lengths,'Strt':self.Strt}
 

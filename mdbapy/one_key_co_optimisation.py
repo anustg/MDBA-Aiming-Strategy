@@ -205,6 +205,7 @@ class one_key_start:
 		return Hst_data_partial_ranked[:,0]
 	
 	def flow_path(self): # flow path and pipe diameter selections
+
 		Q_demand=self.Q_rec
 		velocity_limit=2.44
 		oversizing=self.oversizing
@@ -256,7 +257,7 @@ class one_key_start:
 					Candidate=np.append(Candidate,[num_bundle,num_fp,D0_group[i],pattern])
 			n_p+=1
 		Candidate=Candidate.reshape(int(len(Candidate)/4),4)
-		print(Candidate)
+		print("FLow path candidate", Candidate)
 		
 		Results=np.array([])
 		for i in range(int(len(Candidate))):
@@ -266,10 +267,12 @@ class one_key_start:
 			self.D0=float(Candidate[i,2])
 			self.pattern=Candidate[i,3]
 			Defocus,MDBA_results=self.MDBA_aiming_new(dni=980,phi=0.,elevation=55.08)
-			Results=np.append(Results,MDBA_results[0])
+			Results=np.append(Results,MDBA_results[0]) #MDBA_results[0] is the overall optic efficiency
+
 		
 		idx=np.where(Results==max(Results))[0][0]
-		print(idx)
+		print('  candidate index with the max eta_opt', idx)
+
 		self.num_bundle=int(Candidate[idx,0])
 		self.num_fp=int(Candidate[idx,1])
 		self.num_pass=int(self.num_bundle/self.num_fp)
@@ -278,11 +281,14 @@ class one_key_start:
 		np.savetxt('%s/flowpath.csv'%(self.casedir), np.array([self.num_bundle,self.num_fp,self.D0,self.pattern]), fmt='%s', delimiter=',')
 		
 	def MDBA_aiming_new(self,dni,phi,elevation): # MDBA
+
 		self.num_hst=int(len(np.loadtxt(self.csv_trimmed,delimiter=',', skiprows=2))) # the num hst for the large field
 		att_factor=self.attenuation(self.csv_trimmed)
 		GA_tot=dni*self.num_hst*self.hst_w*self.hst_h
 		#print GA_tot
+		print('')
 		print('Start MDBA')
+
 		# initialization for aiming
 		C_aiming=np.zeros(self.num_bundle)
 		C_aiming[:]=0.5
@@ -304,18 +310,20 @@ class one_key_start:
 		sb_loss=(q_results[2]+q_results[4])/q_results[0]*usage
 		att_loss=q_results[5]/q_results[0]*usage
 		spi_loss=q_results[6]/q_results[0]*usage
-		print('Interception efficiency: ' + str(eta/eta_exc_intec))
+		print('	Interception efficiency: ' + str(eta/eta_exc_intec))
 		read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True)
 		results,aiming_results,vel_max,Strt=self.HT_model(25.,5.)
 		Vel_bool=vel_max<2.44
-		print('q_results', q_results[-1])
-		print('C_aiming', C_aiming)
-		print('aiming_res[1]', aiming_results[1]) # for each tube bank
-		print('Vel_bool', Vel_bool) # for each flow path
-		print('vel_max', vel_max)
+		print('	Q_abs', q_results[-1])
+		print('	C_aiming', C_aiming)
+		print('	aiming_results[1]: %s/%s'%(np.sum(aiming_results[1]), len(aiming_results[1])))  # for each tube bank
+		print('	Vel_bool: %s/%s'%(np.sum(Vel_bool), len(Vel_bool))) # for each flow path
+		print('	vel_max:', np.max(vel_max))
+
 		gap=0.1
 		Defocus=np.all(aiming_results[1])==False
 		title=np.array(['x', 'y', 'z', 'foc', 'aim x', 'aim y', 'aim z', 'm', 'm', 'm', 'm', 'm', 'm', 'm'])
+
 		# search algorithm
 		ite1=0
 		pos_and_aiming_stand_by=np.array([])
@@ -382,23 +390,22 @@ class one_key_start:
 			usage=float(len(np.loadtxt(self.csv_aiming,delimiter=',', skiprows=2)))/self.num_hst
 			self.run_SOLSTICE(dni=dni,phi=phi,elevation=elevation,att_factor=att_factor,num_rays=self.num_rays,csv=self.csv_aiming)
 			eta,q_results,eta_exc_intec=proces_raw_results('%s/simul'% self.casedir,'%s/'% self.casedir)
-			print(		'eta', eta)
-			print(		'q_res[-1]', q_results[-1])
+			print('	 	Interception efficiency (iteration %s): %s'%(ite1, eta/eta_exc_intec))
+			print('	 	Q_abs (iteration %s): %s'%(ite1, q_results[-1]))
 			cos_loss=q_results[1]/q_results[0]*usage # ratio
 			ref_loss=q_results[3]/q_results[0]*usage
 			sb_loss=(q_results[2]+q_results[4])/q_results[0]*usage
 			att_loss=q_results[5]/q_results[0]*usage
 			spi_loss=q_results[6]/q_results[0]*usage
-			print('		Interception efficiency: ' + str(eta/eta_exc_intec))
 			read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True)
 			results,aiming_results,vel_max,Strt=self.HT_model(25.,5.,overflux=not np.all(aiming_results[1]))
 			Vel_bool=vel_max<2.44
 			print('		C_aiming', C_aiming)
 			print('		Exp', Exp)
 			print('		A_f', A_f)
-			print('		aiming_results[1]', aiming_results[1])
-			print('		Vel_bool', Vel_bool)
-			print('		vel_max', vel_max)
+			print('		aiming_results[1]: %s/%s'%(np.sum(aiming_results[1]), len(aiming_results[1])))
+			print('		Vel_bool: %s/%s'%(np.sum(Vel_bool), len(Vel_bool)))
+			print('		vel_max:', np.max(vel_max))
 			ite1+=1
 			
 		# save the stand-by hst
@@ -406,7 +413,7 @@ class one_key_start:
 		pos_and_aiming_stand_by=pos_and_aiming_stand_by.reshape(int(len(pos_and_aiming_stand_by)/7), 7)
 		np.savetxt('%s/pos_and_aiming_stand_by.csv' % self.casedir, pos_and_aiming_stand_by, fmt='%s', delimiter=',')
 		print('		length stand by: %s'%str(len(pos_and_aiming_stand_by)-2))
-		print(ite1)
+
 		MDBA_results=[q_results[-1]/GA_tot,1-usage,cos_loss,ref_loss,sb_loss,att_loss,spi_loss]
 		
 		return Defocus,MDBA_results
@@ -437,7 +444,7 @@ class one_key_start:
 				for m in range(int(0.5*M)+1):
 					if Defocus[n,m]==False:
 						continue
-					print('DNI ratio',  d, 'n', n, 'm', m)
+					print('	DNI ratio',  d, 'n', n, 'm', m)
 					delta = 23.4556*np.sin(Lammda[n])
 					theta=sun.zenith(self.latitude, delta, Omega[m]/np.pi*180.)
 					phi=sun.azimuth(self.latitude, theta, delta, Omega[m]/np.pi*180.)
@@ -446,27 +453,34 @@ class one_key_start:
 						continue
 					dni=self.get_I(elevation)
 					Defocus[n,m],F[n,m,:]=self.MDBA_aiming_new(dni=dni*DNI_ratio[d],phi=phi,elevation=elevation)
-					print('OPTICAL EFFICIENCY',F[n,m,:])
-					
+					#print('	OPTICAL EFFICIENCY',F[n,m,:])
+
+
 					# generate the RELT
 					if d==0:
 						if n==3 or n==5 or n==7:
 							max_flux=read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True)
 							for i in range(int(len(T_amb_g))):
-								print(T_amb_g[i],3.)
+								print('T_abm_g, 3', T_amb_g[i],3.)
 								results,aiming_results,vel_max,Strt=self.HT_model(T_amb_g[i],3.)
+								#print(results)
 								if np.isnan(results[3]):
 									continue 
 								results_table=np.append(results_table,[results[0],T_amb_g[i],3.,dni,max_flux])
 								results_table=np.append(results_table,results[3:])
+
 							for i in range(int(len(V_wind_g))):
-								print(20.,V_wind_g[i])
+								print('20 V_wind_g', 20.,V_wind_g[i])
 								results,aiming_results,vel_max,Strt=self.HT_model(20.,V_wind_g[i])
+								#print(results)
 								if np.isnan(results[3]):
 									continue 
 								results_table=np.append(results_table,[results[0],20.,V_wind_g[i],dni,max_flux])
 								results_table=np.append(results_table,results[3:])
-					
+					#print('results_table', results_table)					
+
+
+
 				for m in range(int(0.5*M)+1,M+1):
 					F[n,m,:]=F[n,M-m,:]
 					Defocus[n,m]=Defocus[n,M-m]
@@ -539,6 +553,7 @@ class one_key_start:
 			vel_max_2[self.num_pass*i]=vel_max[i]
 			if self.num_pass>1:
 				vel_max_2[self.num_pass*i+1]=vel_max[i]
+
 		# plot the velocity at different banks
 		plot_vel=False
 		if plot_vel==True:
@@ -560,7 +575,7 @@ class one_key_start:
 			plt.ylim(min(vel_max_new)-0.2,3.0)
 			plt.xlim(0,self.num_bundle+1)
 			plt.savefig(open('%s/Velocity.png'%self.casedir,'w'), dpi=400)
-			plt.close(fig)
+			plt.close('all')
 		
 		return results,aiming_results,vel_max_2,Strt
 	
@@ -576,7 +591,7 @@ class one_key_start:
 		phi=270.-phi
 		if phi > 360.:
 			phi=phi-360.
-		print(phi, elevation,dni)
+		print('	Sun position (%.2f, %.2f), DNI %.1f'%(phi, elevation,dni))
 
 		scene=SolsticeScene(mainfolder=self.casedir,num_rays=num_rays,dni=dni,azimuth=phi,zenith=elevation,att_factor=att_factor,csv=csv,tower_h=self.tower_h,r_cyl=self.r_diameter/2.,h_cyl=self.r_height,num_bundle=self.num_bundle, hst_w=self.hst_w, hst_h=self.hst_h, mirror_reflectivity=self.mirror_reflectivity, slope_error=self.slope_error, sunshape=self.sunshape, sunshape_param=self.sunshape_param)
 		scene.gen_YAML()
@@ -626,9 +641,7 @@ class one_key_start:
 		ax.tick_params(axis='both', which='major', labelsize=20)
 		ax.set_aspect(1)
 		plt.savefig(self.casedir+'/field.png', bbox_inches='tight',dpi=100)
-		plt.close()
-		plt.show()
-		print('done')
+		plt.close('all')
 	
 if __name__=='__main__':
 	casedir='./solstice-test'

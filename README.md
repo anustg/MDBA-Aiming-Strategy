@@ -25,7 +25,7 @@ To add this package into your local Python library:
 	$ cd mdba-scripts
 	To add it into the default path:
 	$ pip install . 
-	To add it into a user defined path
+	To add it into a user defined path:
 	$ pip install . --prefix=/user/defined/path
 
 

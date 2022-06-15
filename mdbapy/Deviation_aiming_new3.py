@@ -124,6 +124,7 @@ def aiming(folder,r_height,r_diameter,C_aiming,csv,tower_h,num_bundle,Exp,A_f,st
 	csv_new='%s/pos_and_aiming_new.csv' % folder # the output field file
 	np.savetxt(csv_new, pos_and_aiming_new, fmt='%s', delimiter=',')
 	return Hst_info_ranked,Hst_stand
+
 if __name__=='__main__':
 	r_height=18. # receiver height
 	r_diameter=16.

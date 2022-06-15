@@ -31,7 +31,7 @@ def flux_limits_V(V, Ts, flux_limits_file):
 	return flux_lim[:,0]
 	
 def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, flow_paths=True, saveloc=None, billboard=False, flux_limits_file=None,C_aiming=None,overflux=True):
-	print("plotting")
+	print("tower receiver plotting")
 	fileo = open(files,'rb')
 	data = pickle.load(fileo)
 	fileo.close()
@@ -234,6 +234,8 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		plt.figtext(0.25, 0.01, '(a)')
 		plt.savefig(open(saveloc+'_3D_maps.png','wb'), dpi=400)
 		plt.clf()
+		plt.close('all')
+
 		ax = fig.add_subplot(1,2,2, projection='3d', aspect=1.3)
 
 		flux = T_ext[N.hstack(ahr_map)]
@@ -283,7 +285,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 
 		plt.savefig(open(saveloc+'_3D_maps.png','wb'), dpi=400)
 		plt.clf()
-		plt.close(fig)
+		plt.close('all')
 
 	if flux_map:
 		fig = plt.figure(figsize=(3,3.4), dpi=1000)
@@ -349,6 +351,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 
 		plt.savefig(open(saveloc+'_3D_flux.png','wb'), dpi=400)
 		plt.clf()
+		plt.close('all')
 
 		fig = plt.figure(figsize=(3,3.4), dpi=1000)
 		plt.subplots_adjust(left=0., bottom=0.06, top =1.02, right=1.01, wspace=0)
@@ -413,6 +416,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 
 		plt.savefig(open(saveloc+'_3D_T.png','wb'), dpi=400)
 		plt.clf()
+		plt.close('all')
 		
 		fig = plt.figure(figsize=(3,3.4), dpi=1000)
 		plt.subplots_adjust(left=0., bottom=0.06, top =1.02, right=1.01, wspace=0)
@@ -503,7 +507,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		plt.legend(loc=3,ncol=3, borderaxespad=0, bbox_to_anchor=(0.,1.05))
 
 		#plt.savefig(open(saveloc+'_Temp_fp.png','wb'), dpi=400)
-		#plt.close(fig)
+		#plt.close('all')
 		'''
 		bot=0.08
 		top=0.93
@@ -648,7 +652,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 			ax.tick_params(axis='both', which='major', labelsize=size,direction='in')
 			ax.locator_params(nbins=5)
 		plt.savefig(open(saveloc+'_flux_fp.png','wb'), dpi=200)
-		plt.close()
+		plt.close('all')
 		plt.clf()
 		aiming_results=[Success,Positive,A_over,C_safe,C_net,S_ratio]
 	return results,aiming_results,vel_max
@@ -711,7 +715,7 @@ def simple_tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=T
 	
 	plt.rc('font', size=8)
 	eff_rec=N.sum(q_net)/N.sum(fluxmap*areas[ahr_map])
-	print('Receiver efficiency: '+str(eff_rec))
+	print('	Receiver efficiency: %.3f'%eff_rec)
 	# Qin, eff_abs,eff_ems,T_ext_mean,h_ext,q_refl,q_emi,q_conv,eff_rec
 	#print T_ext
 	#print N.average(T_ext),N.sqrt(N.sqrt(N.average(T_ext**4))),h_conv_ext
@@ -1015,7 +1019,7 @@ def flow_path_plot(files='/home/charles/Documents/Boulot/These/Sodium receiver_C
 
 		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'wb'), dpi=400)
 		plt.clf()
-		plt.close(fig)
+		plt.close('all')
 		
 def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium receiver_CMI/ref_case_result_1', fps=[0], saveloc=None, flux_limits_file=None):
 
@@ -1285,7 +1289,7 @@ def flow_path_plot_billboard(files='/home/charles/Documents/Boulot/These/Sodium 
 
 		plt.savefig(open(saveloc+'_fp_%s.png'%str(flow_path),'wb'), dpi=400)
 		plt.clf()
-		plt.close(fig)
+		plt.close('all')
 
 def pipes_differential_heating(flux_table_detailed, receiver):
 
@@ -1345,4 +1349,5 @@ def pipes_differential_heating(flux_table_detailed, receiver):
 
 	plt.savefig(path[0]+'/differential_energy.png', dpi=400)
 	plt.clf()
+	plt.close('all')
 	

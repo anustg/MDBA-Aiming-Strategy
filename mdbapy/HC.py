@@ -176,7 +176,7 @@ class Solar_salt():
 			Tlow = (T<self.Tmin)
 			Thigh = (T>self.Tmax)
 		if Tlow or Thigh:
-			print("Temperature of Solar Salt outside of correlations range: T_min=%s and T_max=%s"%(T.min(),T.max()))
+			print("Temperature of Solar Salt outside of correlations range: T_min=%.1f and T_max=%.1f"%(T.min(),T.max()))
 			return False
 		else:
 			return True
@@ -374,3 +374,4 @@ if __name__=='__main__':
 	plt.ylim(ymin, ymax)
 
 	plt.savefig('HC props.png', dpi=500)
+	plt.close()

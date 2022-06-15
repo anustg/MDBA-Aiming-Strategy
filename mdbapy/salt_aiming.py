@@ -382,7 +382,7 @@ if __name__=='__main__':
 	source_path=os.getcwd()
 
 	# Inputs
-	num_bundle=18         # Number of panels
+	num_bundle=16        # Number of panels
 	r_height=10.5         # Receiver height [m]
 	r_diameter=8.5        # Receiver diameter [m]
 	bins=50               # Vertical bins
