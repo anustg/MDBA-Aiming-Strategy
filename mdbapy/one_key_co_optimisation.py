@@ -18,8 +18,8 @@ from .cal_layout_r import radial_stagger, aiming_cylinder
 from .Deviation_aiming_new3 import aiming
 from .Open_CSPERB import eval_v_max, Cyl_receiver
 from .Open_CSPERB_plots import tower_receiver_plots
-from .HC import Na
-from .Tube_materials import Inconel740H
+from .HC import Na, Solar_salt
+from .Tube_materials import Inconel740H, Haynes230
 from .Flux_reader import read_data
 from .Loss_analysis import receiver_correlation
 from .output_motab import output_motab, output_matadata_motab
@@ -28,7 +28,33 @@ from .SOLSTICE import SolsticeScene
 
 
 class one_key_start:
-	def __init__(self,casedir, tower_h, delta_r2, delta_r3, r_diameter, r_height, SM, oversizing, fluxlimitpath, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=50000, latitude=34.85):
+	def __init__(self, casedir, tower_h, Q_rec, T_in, T_out, HTF, rec_material, r_diameter, r_height, fluxlimitpath, SM, oversizing, delta_r2, delta_r3, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=50000, latitude=34.85):
+		"""
+		casedir (str): case directory
+		tower_h (float): tower height (m)
+		Q_rec (float): receiver nominal output, e.g. P_pb/eta_pb*SM (W)
+		T_in (float): receiver inlet temperature (K)
+		T_out (float): receiver outlet temperature (K)
+		HTF (str): heat transfer fluid, 'sodium' or 'salt'
+		rec_material (str): receiver tube material, 'Haynes230' or 'Inconel740H'
+		r_diameter (float): receiver diameter (m)
+		r_height (float): receier height (m)
+		fluxlimitpath (str): the directory of the flux limit file
+		SM (float): solar multiple
+		oversizing (float): the heliostat field oversizing factor
+		delta_r2 (float): the radial distance in the second zone 
+		delta_r3 (float): the radial distance in the third zone
+		hst_w (float): heliostat width (m)
+		hst_h (float): heliostat height (m)
+		mirror_reflectivity (float): mirror reflectivity
+		slope_error (float): slope error (rad)
+		sunshape (str): 'pillbox' or 'buie'
+		sunshape_param (float): the csr value if sunshape is Buie, the angular width (in degree) if sunshape is pillbox
+		num_rays (int): number of rays in the ray tracing
+		latitude (float): latitude of the plant location (degree)
+
+		"""
+
 	
 		self.casedir=casedir
 		self.fluxlimitpath=fluxlimitpath
@@ -38,7 +64,7 @@ class one_key_start:
 		#shutil.copy('%s/SOLSTICE.py' % casedir, casedir) # for ray-tracing
 		
 		# power calculation
-		Q_rec = 111.e6/0.51*SM # receiver nominal output
+		#Q_rec = 111.e6/0.51*SM # receiver nominal output
 		Q_rec_inc = Q_rec/0.88*oversizing # field nominal output
 		num_hst=int(Q_rec_inc/0.6/980./(hst_w*hst_h)*1.3) # estimated number of hst for the large field
 		print('Receiver nominal output', Q_rec)
@@ -71,6 +97,25 @@ class one_key_start:
 		self.num_rays=num_rays # number of rays
 		self.num_bundle=16 # A primary number of tube banks
 		self.Q_rec=Q_rec
+		self.T_in=T_in	
+		self.T_out=T_out
+
+		self.HTF=HTF
+		if HTF=='sodium':
+			self.HC=Na()
+		elif HTF=='salt':
+			self.HC=Solar_salt()
+		else:
+			print('ERROR: receiver HTF not found')			
+
+		self.rec_material=rec_material	
+		if rec_material=='Haynes230':
+			self.rec_material_model=Haynes230()
+		elif rec_material=='Inconel740H':
+			self.rec_material_model=Inconel740H()
+		else:
+			print('ERROR: receiver material not found')
+
 
 		self.sunshape=sunshape
 		self.sunshape_param=sunshape_param
@@ -218,8 +263,19 @@ class one_key_start:
 			if n_p==3:
 				num_bundle=12
 				num_fp=int(num_bundle/n_p)
-			rec = Cyl_receiver(radius=0.5*self.r_diameter, height=self.r_height, n_banks=num_bundle, n_elems=self.bins, D_tubes_o=60.33/1000., D_tubes_i=60.33/1000.-2.*1.2e-3, 
-			  abs_t=0.98, ems_t=0.91, k_coating=1.2, D_coating_o=60.33/1000.+45e-6)
+
+			rec = Cyl_receiver(
+				radius=0.5*self.r_diameter, 
+				height=self.r_height, 
+				n_banks=num_bundle, 
+				n_elems=self.bins, 
+				D_tubes_o=60.33/1000., 
+				D_tubes_i=60.33/1000.-2.*1.2e-3, 
+    			abs_t=0.98, 
+				ems_t=0.91, 
+				k_coating=1.2, 
+				D_coating_o=60.33/1000.+45e-6)
+
 			pattern = 'cmvNit'
 			Strt=np.array([8, 0, 7, 15, 9, 1, 6, 14, 10, 2, 5, 13, 11, 3, 4, 12])
 			if n_p==3:
@@ -228,7 +284,9 @@ class one_key_start:
 			Azimuth_boundary=np.zeros(num_bundle+1) # from -90 to 270
 			for i in range(num_bundle+1):
 				Azimuth_boundary[i]=-90.+360./num_bundle*i	
-			N_hst_sector=np.zeros(num_bundle,dtype=int) # number of heliostat in each field sector
+
+			# number of heliostat in each field sector
+			N_hst_sector=np.zeros(num_bundle,dtype=int)
 			for i in range(num_bundle):
 				for j in range(int(len(hst_info))):
 					x=hst_info[j,0]
@@ -241,21 +299,35 @@ class one_key_start:
 						azimuth+=180.
 					if azimuth>=Azimuth_boundary[i] and azimuth<Azimuth_boundary[i+1]:
 						N_hst_sector[i]+=1
-			N_hst_fp=np.zeros(num_fp,dtype=int)
+
+			# number of heliostats in each flow path
+			N_hst_fp=np.zeros(num_fp,dtype=int) 
 			for f in range(num_fp):
 				for p in range(n_p):
-					N_hst_fp[f]+=N_hst_sector[Strt[f*n_p+p]] # number of heliostats in each flow path
+					N_hst_fp[f]+=N_hst_sector[Strt[f*n_p+p]] 
 			e_net_fp=Q_demand*max(N_hst_fp)/len(hst_info)
-			vmax, n_t=eval_v_max(e_net_fp=e_net_fp, HC=Na(), T_in=520+273.15, T_out=740+273.15, W_abs=np.pi*self.r_diameter, n_b=self.num_bundle, D_tube_o=D0_group/1000., D_tube_in=D0_group/1000.-2.*1.2e-3, pipe_spacing=1e-3)
+
+			vmax, n_t=eval_v_max(
+				e_net_fp=e_net_fp, 
+				HC=self.HC, 
+				T_in=self.T_in, 
+				T_out=self.T_out, 
+				W_abs=np.pi*self.r_diameter, 
+				n_b=self.num_bundle, 
+				D_tube_o=D0_group/1000., 
+				D_tube_in=D0_group/1000.-2.*1.2e-3, 
+				pipe_spacing=1e-3)
+
 			ID_1=np.asarray(np.where((vmax<velocity_limit) & (vmax>=velocity_limit/oversizing)))[0]
 			if ID_1.size != 0:
 				for i in range(int(len(ID_1))):
 					Candidate=np.append(Candidate,[num_bundle,num_fp,D0_group[ID_1[i]],pattern])
+
 			ID_2=np.asarray(np.where(vmax<velocity_limit/oversizing))[0]
 			if ID_2.size != 0:
 				for i in range(ID_2[0],min(ID_2[0]+1,len(D0_group))):
 					Candidate=np.append(Candidate,[num_bundle,num_fp,D0_group[i],pattern])
-			n_p+=1
+
 		Candidate=Candidate.reshape(int(len(Candidate)/4),4)
 		print("FLow path candidate", Candidate)
 		
@@ -294,14 +366,49 @@ class one_key_start:
 		C_aiming[:]=0.5
 		Exp=np.zeros(self.num_bundle)
 		Exp[:]=2.0
+
+		# TODO this section is Sodium specific
+		# need to make it generalised
+		# maybe something like in the quotation
+		# ======================================
 		A_f=np.zeros(self.num_bundle)
+		"""
+		if self.pattern =='cmvNit': # flow path for sodium
+			if self.num_bundle/self.num_fp == 1:
+				A_f[:]=0.75
+			elif self.num_bundle/self.num_fp == 2:
+				A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
+				A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
+
+		elif self.pattern='NES-NWS': # flow path for salt receiver
+			if self.num_bundle/self.num_fp == 1:
+				A_f[:]=0.75
+			elif self.num_bundle/self.num_fp == 2:
+				A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
+				A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
+		"""
+
+		# =========================================
 		if self.num_bundle/self.num_fp == 1:
 			A_f[:]=0.75
 		elif self.num_bundle/self.num_fp == 2:
 			A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
 			A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
 		self.C_aiming=C_aiming
-		Hst_info,Hst_stand=aiming(self.casedir,self.r_height,self.r_diameter,C_aiming,self.csv_trimmed,self.tower_h,self.num_bundle,Exp,A_f,stand_by=False)
+
+
+		Hst_info,Hst_stand=aiming(
+			self.casedir,
+			self.r_height,
+			self.r_diameter,
+			C_aiming,
+			self.csv_trimmed,
+			self.tower_h,
+			self.num_bundle,
+			Exp,
+			A_f,
+			stand_by=False)
+
 		usage=float(self.num_hst-sum(Hst_stand))/self.num_hst
 		self.run_SOLSTICE(dni=dni,phi=phi,elevation=elevation,att_factor=att_factor,num_rays=self.num_rays,csv=self.csv_aiming)
 		eta,q_results,eta_exc_intec=proces_raw_results('%s/simul'% self.casedir,'%s/'% self.casedir)
@@ -329,6 +436,7 @@ class one_key_start:
 		pos_and_aiming_stand_by=np.array([])
 		while ((np.all(aiming_results[1])==False or np.all(Vel_bool)==False) and ite1<25): #and np.all(C_aiming<1.):
 			print('		Iteration', ite1)	
+
 			if np.all(C_aiming<1.)==False:
 				# instead of extent E, defocus high-foc heliostats
 				Tude_index=np.full(self.num_bundle, True, dtype=bool)
@@ -386,7 +494,17 @@ class one_key_start:
 						elif aiming_results[5][i]<0.45:
 							Exp[int(Strt[i])]+=0.2
 			C_aiming[C_aiming>1.]=1.0
-			Hst_info,Hst_stand=aiming(self.casedir,self.r_height,self.r_diameter,C_aiming,self.csv_aiming,self.tower_h,self.num_bundle,Exp,A_f,stand_by=False)
+			Hst_info,Hst_stand=aiming(
+				self.casedir,
+				self.r_height,
+				self.r_diameter,
+				C_aiming,
+				self.csv_trimmed,
+				self.tower_h,
+				self.num_bundle,
+				Exp,
+				A_f,
+				stand_by=False)
 			usage=float(len(np.loadtxt(self.csv_aiming,delimiter=',', skiprows=2)))/self.num_hst
 			self.run_SOLSTICE(dni=dni,phi=phi,elevation=elevation,att_factor=att_factor,num_rays=self.num_rays,csv=self.csv_aiming)
 			eta,q_results,eta_exc_intec=proces_raw_results('%s/simul'% self.casedir,'%s/'% self.casedir)
@@ -407,6 +525,7 @@ class one_key_start:
 			print('		Vel_bool: %s/%s'%(np.sum(Vel_bool), len(Vel_bool)))
 			print('		vel_max:', np.max(vel_max))
 			ite1+=1
+
 			
 		# save the stand-by hst
 		pos_and_aiming_stand_by=np.append(title,pos_and_aiming_stand_by)
@@ -421,6 +540,14 @@ class one_key_start:
 	def annual_trimmed_field(self): # OELT and RELT generations
 
 		self.num_hst=int(len(np.loadtxt(self.csv_trimmed,delimiter=',', skiprows=2))) # the num hst for the large field
+
+		flowpath=np.loadtxt('%s/flowpath.csv'%(self.casedir), dtype=str, delimiter=',')
+		self.num_bundle=flowpath[0].astype(int)
+		self.num_fp=flowpath[1].astype(int)
+		self.num_pass=int(self.num_bundle/self.num_fp)
+		self.D0=flowpath[2].astype(float)
+		self.pattern=flowpath[3]
+
 		months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 		
 		N=10  # for lammda, ecliptic longitude
@@ -441,6 +568,7 @@ class one_key_start:
 		d=0
 		for d in range(int(len(DNI_ratio))):
 			for n in range(3,8):
+
 				for m in range(int(0.5*M)+1):
 					if Defocus[n,m]==False:
 						continue
@@ -508,7 +636,9 @@ class one_key_start:
 			F_output[1:,1:]=F[:,:,1]
 			np.savetxt('%s/F_unavail_%s.csv'%(self.casedir,DNI_ratio[d]), F_output, fmt='%s', delimiter=',')
 			#d+=1
-		
+		#print('****RELT****')
+		#print(results_table)
+		#print('')
 		# to output RELT
 		title=np.array(['Qin', 'T_amb', 'Wind_speed', 'DNI','Peak_flux','T_ext_mean','T_ext_mean','h_ext','q_refl','q_emi','q_conv','R_eff'])
 		results_table=np.append(title, results_table)
@@ -540,14 +670,51 @@ class one_key_start:
 		
 			
 	def HT_model(self,T_amb,V_wind,overflux=True): # receiver heat balance model
-		print('D0', self.D0)
-		print('Flow pattern',self.pattern+str(self.num_fp))
-		rec = Cyl_receiver(radius=0.5*self.r_diameter, height=self.r_height, n_banks=self.num_bundle, n_elems=self.bins, D_tubes_o=self.D0/1000., D_tubes_i=self.D0/1000.-2.*1.2e-3, 
-		  abs_t=0.98, ems_t=0.91, k_coating=1.2, D_coating_o=self.D0/1000.+45e-6)
+
+		#print('D0', self.D0)
+		#print('Flow pattern',self.pattern+str(self.num_fp))
+		rec = Cyl_receiver(
+			radius=0.5*self.r_diameter, 
+			height=self.r_height, 
+			n_banks=self.num_bundle, 
+			n_elems=self.bins, 
+			D_tubes_o=self.D0/1000., 
+			D_tubes_i=self.D0/1000.-2.*1.2e-3, 
+		    abs_t=0.98, 
+			ems_t=0.91, 
+			k_coating=1.2, 
+			D_coating_o=self.D0/1000.+45e-6)
+
+
 		Strt=rec.flow_path(option=self.pattern+str(self.num_fp),fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
-		rec.balance(HC=Na(), material=Inconel740H(), T_in=520+273.15, T_out=740+273.15, T_amb=T_amb+273.15, h_conv_ext='SK', filesave=self.casedir+'/flux-table',air_velocity=V_wind)
-		flux_limits_file='%s/N07740_OD%s_WT1.20_peakFlux_vel.csv'%(self.fluxlimitpath,round(self.D0,2))
-		results,aiming_results,vel_max=tower_receiver_plots(files=self.casedir+'/flux-table', efficiency=False, maps_3D=False, flux_map=False, flow_paths=True,saveloc=None, billboard=False, flux_limits_file=flux_limits_file,C_aiming=self.C_aiming,overflux=overflux)
+
+		rec.balance(
+			HC=self.HC, 
+			material=self.rec_material_model, 
+			T_in=self.T_in, 
+			T_out=self.T_out, 
+			T_amb=T_amb+273.15, 
+			h_conv_ext='SK', 
+			filesave=self.casedir+'/flux-table',air_velocity=V_wind)
+
+		if self.rec_material=='Haynes230':
+			material_name='N06230'
+		elif self.rec_material=='Inconel740H':
+			material_name='N07740'
+	
+		flux_limits_file='%s/%s_OD%.2f_WT1.20_peakFlux.csv'%(self.fluxlimitpath,material_name, self.D0)
+	
+		results,aiming_results,vel_max=tower_receiver_plots(
+			files=self.casedir+'/flux-table', 
+			efficiency=False, 
+			maps_3D=False, 
+			flux_map=False, 
+			flow_paths=True,
+			saveloc=None, 
+			billboard=False, 
+			flux_limits_file=flux_limits_file,
+			C_aiming=self.C_aiming,overflux=overflux)
+
 		vel_max_2=np.ones(self.num_bundle)
 		for i in range(self.num_fp):
 			vel_max_2[self.num_pass*i]=vel_max[i]
@@ -642,27 +809,7 @@ class one_key_start:
 		ax.set_aspect(1)
 		plt.savefig(self.casedir+'/field.png', bbox_inches='tight',dpi=100)
 		plt.close('all')
-	
-if __name__=='__main__':
-	casedir='./solstice-test'
-	fluxlimitpath='/media/yewang/Data/Research/svn_system-modelling/modelling/Field_receiver_model/201015_N07740_thermoElasticPeakFlux_velocity'
-	if not os.path.exists(casedir):
-		os.makedirs(casedir)
-	
-	# input
-	r_diameter=19.012482 # receiver diameter
-	r_height=19.810327 # receiver height
-	tower_h=188.567344 # tower height
-	delta_r2=0.871037 # field expanding for zone2
-	delta_r3=1.992501 # field expanding for zone3
-	oversizing=1.245606 # oversizing factor
-	SM=2.717882 # Solar multiple
-	print(r_diameter,r_height,tower_h,delta_r2,delta_r3,oversizing,SM)
 
-	Model=one_key_start(casedir, tower_h, delta_r2,delta_r3,r_diameter,r_height,SM,oversizing=oversizing, fluxlimitpath=fluxlimitpath)
-	Model.big_field_generation()
-	Model.annual_big_field()
-	Model.determine_field()
-	Model.flow_path()
-	Model.annual_trimmed_field()
+		print('done')
+
 

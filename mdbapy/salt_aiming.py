@@ -184,8 +184,7 @@ class one_key_start:
 				filesave=self.folder+'/flux-table',
 				air_velocity=V_wind)
 		flux_limits_file = \
-				'%s/%s/N06230_OD%s_WT1.20_peakFlux.csv'%(
-				self.source,
+				'../data/%s/N06230_OD%s_WT1.20_peakFlux.csv'%(
 				flux_folder,
 				round(self.D0,2))
 		results,aiming_results,vel_max = tower_receiver_plots(

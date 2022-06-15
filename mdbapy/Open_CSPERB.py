@@ -938,10 +938,10 @@ class Cyl_receiver():
 		self.pipe_lengths = []
 
 		if h_conv_ext == 'WSVH':
-			from Convection_loss import cyl_conv_loss_coeff_WSVH
+			from .Convection_loss import cyl_conv_loss_coeff_WSVH
 			self.h_conv_ext = cyl_conv_loss_coeff_WSVH(self.height, 2.*self.radius, self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		if h_conv_ext == 'SK':
-			from Convection_loss import cyl_conv_loss_coeff_SK
+			from .Convection_loss import cyl_conv_loss_coeff_SK
 			self.h_conv_ext = cyl_conv_loss_coeff_SK(self.height, 2.*self.radius, self.D_coating_o/2., self.air_velocity, (self.T_in+self.T_out)/2., T_amb)
 		else:
 			self.h_conv_ext = h_conv_ext
@@ -966,7 +966,7 @@ class Cyl_receiver():
 			
 				q_ref = (1.-self.eff_abs)*flux_fp*areas
 				q_net = self.eff_abs*flux_fp*areas  # ??
-				T_ext = T_in+(T_out-T_in)*q_net/N.sum(q_net)
+				T_ext = T_in+(T_out-T_in)*q_net/N.sum(q_net) #TODO why?
 				T_HC = N.ones(len(q_net)+1)*T_in
 
 				n_tubes = N.floor(areas/elem_lengths/self.D_coating_o)

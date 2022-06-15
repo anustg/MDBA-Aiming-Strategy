@@ -578,7 +578,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 				# calculation of Aover
 				D_part=D[n_elems*i:n_elems*(i+1)] # for this tube bank
 				Index=N.where(D_part<0)
-				if Index[0]!=[]:
+				if Index[0].size>0:
 					if abs(Index[0][0]-n_elems/2-1)>=abs(Index[0][-1]-n_elems/2-1):
 						boundary_1=int(Index[0][0])
 						boundary_2=int(2*(n_elems/2-1)-boundary_1)
@@ -624,7 +624,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 						
 						# for shape exponent
 						index_negative2=N.asarray(index_negative2)
-						if index_negative2!=[]:
+						if index_negative2.size>0:
 							index_negative2=index_negative2[0]
 							#print(f,i,LB2,RB2,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]]),-sum(D_part[index_negative2])
 							S_ratio=N.append(S_ratio,-sum(D_part[index_negative2[N.logical_and(index_negative2>=LB2, index_negative2<RB2)]])/-sum(D_part[index_negative2]))
