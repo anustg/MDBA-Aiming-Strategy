@@ -18,4 +18,14 @@ This MDBA package also needs the following packages:
 ## Instruction
 To be added
 
+To add this package into your local Python library:
+
+	$ cd $HOME
+	$ git clone https://github.com/yewang726/MDBA-Aiming-Strategy.git mdba-scripts
+	$ cd mdba-scripts
+	To add it into the default path:
+	$ pip install . 
+	To add it into a user defined path
+	$ pip install . --prefix=/user/defined/path
+
 
