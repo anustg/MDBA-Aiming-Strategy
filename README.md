@@ -8,12 +8,11 @@ This MDBA package also needs the following packages:
 
 	* Receiver thermal model: https://github.com/casselineau/Open_CSPERB
 	* SOLSTICE, installation guideline: https://github.com/anustg/solstice-scripts.git
-	* Dakota, installation guideline: https://github.com/shuangw1012/Dakota.git
 
 ## TODO
 	* there are scripts duplicated with solsticepy
 	* the receiver thermal model is from [Open_CSPERB](https://github.com/casselineau/Open_CSPERB), but a duplicated copy is within the package
-	* the role of dakota in this package is not clear
+	* the role of dakota in this package is not clear NOTE by shuangw1012: Dakota is no longer needed.
 
 ## Instruction
 To be added
