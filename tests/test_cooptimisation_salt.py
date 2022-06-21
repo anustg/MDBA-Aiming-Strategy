@@ -55,11 +55,14 @@ class TestCooptimisationSalt(unittest.TestCase):
 			latitude=34.85,
 			)
 
-		Model.big_field_generation()
-		Model.annual_big_field()
-		Model.determine_field()
-		Model.flow_path()
-		Model.annual_trimmed_field()	
+		#Model.big_field_generation()
+		#Model.annual_big_field()
+		#Model.determine_field()
+		
+		# input the number of tube bundles, number of flowpaths, pipe outer diameter and flow path pattern
+		Model.flow_path_salt(num_bundle=12,num_fp=2,D0=48.26,pattern='NES-NWS') 
+		#Model.test_DS_aiming()
+		Model.annual_trimmed_field()
 
 
 	def test_touching(self):

@@ -28,7 +28,7 @@ from .SOLSTICE import SolsticeScene
 
 
 class one_key_start:
-	def __init__(self, casedir, tower_h, Q_rec, T_in, T_out, HTF, rec_material, r_diameter, r_height, fluxlimitpath, SM, oversizing, delta_r2, delta_r3, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=50000, latitude=34.85):
+	def __init__(self, casedir, tower_h, Q_rec, T_in, T_out, HTF, rec_material, r_diameter, r_height, fluxlimitpath, SM, oversizing, delta_r2, delta_r3, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=1000000, latitude=34.85):
 		"""
 		casedir (str): case directory
 		tower_h (float): tower height (m)
@@ -249,8 +249,7 @@ class one_key_start:
 		#self.plot_hst_eff(self.DM,self.csv_trimmed,Hst_data_partial_ranked[:,-2])
 		return Hst_data_partial_ranked[:,0]
 	
-	def flow_path(self): # flow path and pipe diameter selections
-
+	def flow_path_sodium(self): # flow path and pipe diameter selections for sodium receivers
 		Q_demand=self.Q_rec
 		velocity_limit=2.44
 		oversizing=self.oversizing
@@ -351,6 +350,14 @@ class one_key_start:
 		self.D0=float(Candidate[idx,2])
 		self.pattern=Candidate[idx,3]
 		np.savetxt('%s/flowpath.csv'%(self.casedir), np.array([self.num_bundle,self.num_fp,self.D0,self.pattern]), fmt='%s', delimiter=',')
+	
+	def flow_path_salt(self,num_bundle,num_fp,D0,pattern): 
+		np.savetxt('%s/flowpath.csv'%(self.casedir), np.array([num_bundle,num_fp,D0,pattern]), fmt='%s', delimiter=',')
+		self.num_bundle=num_bundle
+		self.num_fp=num_fp
+		self.D0=D0
+		self.pattern=pattern
+		self.num_pass=num_bundle/2
 		
 	def MDBA_aiming_new(self,dni,phi,elevation): # MDBA
 
@@ -366,36 +373,25 @@ class one_key_start:
 		C_aiming[:]=0.5
 		Exp=np.zeros(self.num_bundle)
 		Exp[:]=2.0
-
-		# TODO this section is Sodium specific
-		# need to make it generalised
-		# maybe something like in the quotation
-		# ======================================
 		A_f=np.zeros(self.num_bundle)
-		"""
-		if self.pattern =='cmvNit': # flow path for sodium
+		if self.pattern =='cmvNit': # flow path for sodium, specific for num_bundle=16
 			if self.num_bundle/self.num_fp == 1:
 				A_f[:]=0.75
 			elif self.num_bundle/self.num_fp == 2:
 				A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
 				A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
 
-		elif self.pattern='NES-NWS': # flow path for salt receiver
-			if self.num_bundle/self.num_fp == 1:
-				A_f[:]=0.75
-			elif self.num_bundle/self.num_fp == 2:
-				A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
-				A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
-		"""
-
-		# =========================================
-		if self.num_bundle/self.num_fp == 1:
-			A_f[:]=0.75
-		elif self.num_bundle/self.num_fp == 2:
-			A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
-			A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
+		elif self.pattern=='NES-NWS': # this pattern is top injection from two northern banks
+			for t in range(self.num_bundle):
+				if t<0.5*self.num_bundle and t%2==0:
+					A_f[t]=0.33
+				elif t<0.5*self.num_bundle and t%2!=0:
+					A_f[t]=0.67
+				elif t>=0.5*self.num_bundle and t%2==0:
+					A_f[t]=0.67
+				else:
+					A_f[t]=0.33
 		self.C_aiming=C_aiming
-
 
 		Hst_info,Hst_stand=aiming(
 			self.casedir,
@@ -537,10 +533,12 @@ class one_key_start:
 		
 		return Defocus,MDBA_results
 	
+	def test_DS_aiming(self):
+		self.MDBA_aiming_new(dni=980.,phi=0.,elevation=55.08)
+	
 	def annual_trimmed_field(self): # OELT and RELT generations
 
 		self.num_hst=int(len(np.loadtxt(self.csv_trimmed,delimiter=',', skiprows=2))) # the num hst for the large field
-
 		flowpath=np.loadtxt('%s/flowpath.csv'%(self.casedir), dtype=str, delimiter=',')
 		self.num_bundle=flowpath[0].astype(int)
 		self.num_fp=flowpath[1].astype(int)
@@ -667,8 +665,7 @@ class one_key_start:
 		
 		output_matadata_motab(table, field_type='surrounding', aiming='MDBA', n_helios=self.num_hst, A_helio=self.hst_w*self.hst_h, eff_design=Equinox[0], 
 		  d_receiver=self.r_diameter, h_receiver=self.r_height, H_tower=self.tower_h, eff_rec_design=Equinox[1], coefs_T=coefs_T, coefs=coefs, eff_abs=eff_abs, eff_emi= eff_emi,SM=self.SM, savedir='%s/OELT_Solstice.motab'%self.casedir)
-		
-			
+				
 	def HT_model(self,T_amb,V_wind,overflux=True): # receiver heat balance model
 
 		#print('D0', self.D0)
@@ -684,10 +681,10 @@ class one_key_start:
 			ems_t=0.91, 
 			k_coating=1.2, 
 			D_coating_o=self.D0/1000.+45e-6)
-
-
-		Strt=rec.flow_path(option=self.pattern+str(self.num_fp),fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
-
+		if self.HTF=='sodium':
+			Strt=rec.flow_path(option=self.pattern+str(self.num_fp),fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
+		elif self.HTF=='salt':
+			Strt=rec.flow_path(option=self.pattern,fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
 		rec.balance(
 			HC=self.HC, 
 			material=self.rec_material_model, 
@@ -714,36 +711,37 @@ class one_key_start:
 			billboard=False, 
 			flux_limits_file=flux_limits_file,
 			C_aiming=self.C_aiming,overflux=overflux)
-
-		vel_max_2=np.ones(self.num_bundle)
-		for i in range(self.num_fp):
-			vel_max_2[self.num_pass*i]=vel_max[i]
-			if self.num_pass>1:
-				vel_max_2[self.num_pass*i+1]=vel_max[i]
-
-		# plot the velocity at different banks
-		plot_vel=False
-		if plot_vel==True:
-			X=np.arange(self.num_bundle+1)
-			X_1=X[1:]-0.5
-			X_2=X[1:]+0.5
-			vel_max_new=np.zeros(self.num_bundle)
-			vel_max_new[int(Strt[:])]=vel_max_2[:]
-			fig = plt.figure(figsize=(8,6))
-			ax=plt.subplot(111)
-			ax.hlines(vel_max_new, X_1, X_2, colors='black')
-			ax.hlines(y=2.44, xmin=0, xmax=20, colors='red')
-			for i in range(self.num_bundle):
-				plt.axvline(x=X_1[i],c='black',linestyle='--',linewidth=0.3)
-			plt.axvline(X_2[-1], c='black',linestyle='--',linewidth=0.3)
-			plt.xlabel('Tube bank index',fontsize=16)
-			plt.ylabel('${\it{V}_\mathrm{HTF}}$ (m/s)',fontsize=16)
-			ax.tick_params(axis='both', which='major', labelsize=16,direction='in')
-			plt.ylim(min(vel_max_new)-0.2,3.0)
-			plt.xlim(0,self.num_bundle+1)
-			plt.savefig(open('%s/Velocity.png'%self.casedir,'w'), dpi=400)
-			plt.close('all')
 		
+		vel_max_2=np.ones(self.num_bundle) # no considered velocity limit for salt receiver
+		if self.HTF=='sodium':
+			for i in range(self.num_fp):
+				vel_max_2[self.num_pass*i]=vel_max[i]
+				if self.num_pass>1:
+					vel_max_2[self.num_pass*i+1]=vel_max[i]
+
+			# plot the velocity at different banks
+			plot_vel=False
+			if plot_vel==True:
+				X=np.arange(self.num_bundle+1)
+				X_1=X[1:]-0.5
+				X_2=X[1:]+0.5
+				vel_max_new=np.zeros(self.num_bundle)
+				vel_max_new[int(Strt[:])]=vel_max_2[:]
+				fig = plt.figure(figsize=(8,6))
+				ax=plt.subplot(111)
+				ax.hlines(vel_max_new, X_1, X_2, colors='black')
+				ax.hlines(y=2.44, xmin=0, xmax=20, colors='red')
+				for i in range(self.num_bundle):
+					plt.axvline(x=X_1[i],c='black',linestyle='--',linewidth=0.3)
+				plt.axvline(X_2[-1], c='black',linestyle='--',linewidth=0.3)
+				plt.xlabel('Tube bank index',fontsize=16)
+				plt.ylabel('${\it{V}_\mathrm{HTF}}$ (m/s)',fontsize=16)
+				ax.tick_params(axis='both', which='major', labelsize=16,direction='in')
+				plt.ylim(min(vel_max_new)-0.2,3.0)
+				plt.xlim(0,self.num_bundle+1)
+				plt.savefig(open('%s/Velocity.png'%self.casedir,'w'), dpi=400)
+				plt.close('all')
+			
 		return results,aiming_results,vel_max_2,Strt
 	
 	def get_I(self,elevation): # clear-sky DNI 

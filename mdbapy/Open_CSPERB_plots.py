@@ -510,7 +510,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		#plt.close('all')
 		'''
 		bot=0.08
-		top=0.93
+		top=0.90
 		if n_banks/len(fp)==2:
 			fig = plt.figure(figsize=(4*2,(2.+(len(fp)-1)*1.1)/1.7), dpi=1000)
 		elif n_banks/len(fp)==1: 
@@ -528,7 +528,6 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 		for f in range(int(len(fp))):
 			bank_lengths = pipe_lengths[f]
 			bank_lengths_2 = (bank_lengths[1:]+bank_lengths[:-1])/2.
-			
 			if n_banks/len(fp)==1:
 				ax=plt.subplot(int(len(fp)/4),4,f+1)
 				size=18
@@ -538,11 +537,9 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 				size=12
 				plt.text(x=bank_lengths[30], y=1300, s='T%s'%(Strt[2*f]+1), ha='right',fontsize=size)
 				plt.text(x=bank_lengths[80], y=1000, s='T%s'%(Strt[2*f+1]+1), ha='right',fontsize=size)
-
 			elif len(fp)==2:
-				ax=plt.subplot(1, 2, f+1)
+				ax=plt.subplot(2, 1, f+1)
 				size=12
-				plt.text(x=bank_lengths[30], y=1300, s='f%s'%(f), ha='right',fontsize=size)
 			else:
 				ax=plt.subplot(int(len(fp)/4),4,f+1)
 				size=18
@@ -551,7 +548,7 @@ def tower_receiver_plots(files, efficiency=True, maps_3D=True, flux_map=True, fl
 			if len(fp)>1:
 				if n_banks/len(fp)==3:
 					plt.text(x=bank_lengths[120], y=1300, s='Fp %s'%str(f+1), ha='right',fontsize=size)
-				else:
+				elif n_banks/len(fp)==2:
 					plt.text(x=bank_lengths[n_elems], y=1500, s='Fp %s'%str(f+1), ha='right',fontsize=size)
 			
 			plt.plot(bank_lengths_2, q_net[fp[f]]/areas[fp[f]]/1e3, label=r'${\dot{q}^{\prime \prime}_\mathrm{abs}}$', color='0.6')
