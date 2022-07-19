@@ -19,7 +19,7 @@ from .Deviation_aiming_new3 import aiming
 from .Open_CSPERB import eval_v_max, Cyl_receiver
 from .Open_CSPERB_plots import tower_receiver_plots
 from .HC import Na, Solar_salt
-from .Tube_materials import Inconel740H, Haynes230
+from .Tube_materials import Inconel740H, Haynes230, Incoloy800H
 from .Flux_reader import read_data
 from .Loss_analysis import receiver_correlation
 from .output_motab import output_motab, output_matadata_motab
@@ -113,6 +113,8 @@ class one_key_start:
 			self.rec_material_model=Haynes230()
 		elif rec_material=='Inconel740H':
 			self.rec_material_model=Inconel740H()
+		elif rec_material=='Incoloy800H':
+			self.rec_material_model=Incoloy800H()
 		else:
 			print('ERROR: receiver material not found')
 
@@ -360,7 +362,6 @@ class one_key_start:
 		self.num_pass=num_bundle/2
 		
 	def MDBA_aiming_new(self,dni,phi,elevation): # MDBA
-
 		self.num_hst=int(len(np.loadtxt(self.csv_trimmed,delimiter=',', skiprows=2))) # the num hst for the large field
 		att_factor=self.attenuation(self.csv_trimmed)
 		GA_tot=dni*self.num_hst*self.hst_w*self.hst_h
@@ -372,7 +373,7 @@ class one_key_start:
 		C_aiming=np.zeros(self.num_bundle)
 		C_aiming[:]=0.5
 		Exp=np.zeros(self.num_bundle)
-		Exp[:]=2.0
+		Exp[:]=3.0
 		A_f=np.zeros(self.num_bundle)
 		if self.pattern =='cmvNit': # flow path for sodium, specific for num_bundle=16
 			if self.num_bundle/self.num_fp == 1:
@@ -380,17 +381,16 @@ class one_key_start:
 			elif self.num_bundle/self.num_fp == 2:
 				A_f[:int(0.25*self.num_bundle)]=A_f[int(0.75*self.num_bundle):]=0.33
 				A_f[int(0.25*self.num_bundle):int(0.75*self.num_bundle)]=0.67
-
 		elif self.pattern=='NES-NWS': # this pattern is top injection from two northern banks
 			for t in range(self.num_bundle):
 				if t<0.5*self.num_bundle and t%2==0:
-					A_f[t]=0.33
+					A_f[t]=0.67
 				elif t<0.5*self.num_bundle and t%2!=0:
-					A_f[t]=0.67
-				elif t>=0.5*self.num_bundle and t%2==0:
-					A_f[t]=0.67
-				else:
 					A_f[t]=0.33
+				elif t>=0.5*self.num_bundle and t%2==0:
+					A_f[t]=0.33
+				else:
+					A_f[t]=0.67
 		self.C_aiming=C_aiming
 
 		Hst_info,Hst_stand=aiming(
@@ -414,7 +414,7 @@ class one_key_start:
 		att_loss=q_results[5]/q_results[0]*usage
 		spi_loss=q_results[6]/q_results[0]*usage
 		print('	Interception efficiency: ' + str(eta/eta_exc_intec))
-		read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True)
+		read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True,flux_map=True)
 		results,aiming_results,vel_max,Strt=self.HT_model(25.,5.)
 		Vel_bool=vel_max<2.44
 		print('	Q_abs', q_results[-1])
@@ -451,10 +451,11 @@ class one_key_start:
 						pos_and_aiming_stand_by=np.append(pos_and_aiming_stand_by, Hst_info[i][np.argsort(foc)[::1]][int(0.95*len(Hst_info[i])):])
 					else:
 						pos_and_aiming_new=np.append(pos_and_aiming_new, Hst_info[i])
+					#print (i,len(Hst_info[i]),len(pos_and_aiming_new)/7,len(pos_and_aiming_stand_by)/7)
 				pos_and_aiming_new=np.append(title,pos_and_aiming_new)
 				pos_and_aiming_new=pos_and_aiming_new.reshape(int(len(pos_and_aiming_new)/7), 7)
 				np.savetxt('%s/pos_and_aiming_new.csv' % self.casedir, pos_and_aiming_new, fmt='%s', delimiter=',')	
-				print('		length: %s'%str(len(pos_and_aiming_new)-2))		
+				print('		length: %s'%str(len(pos_and_aiming_new)-2))
 			else:
 				C_aiming_old=np.ones(self.num_bundle)
 				C_aiming_old[:]=C_aiming[:]
@@ -490,12 +491,14 @@ class one_key_start:
 						elif aiming_results[5][i]<0.45:
 							Exp[int(Strt[i])]+=0.2
 			C_aiming[C_aiming>1.]=1.0
+			if self.pattern=='NES-NWS':
+				A_f[2:self.num_bundle-2]=0.5 # no tilted aiming
 			Hst_info,Hst_stand=aiming(
 				self.casedir,
 				self.r_height,
 				self.r_diameter,
 				C_aiming,
-				self.csv_trimmed,
+				self.csv_aiming,
 				self.tower_h,
 				self.num_bundle,
 				Exp,
@@ -511,7 +514,7 @@ class one_key_start:
 			sb_loss=(q_results[2]+q_results[4])/q_results[0]*usage
 			att_loss=q_results[5]/q_results[0]*usage
 			spi_loss=q_results[6]/q_results[0]*usage
-			read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True)
+			read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True,flux_map=True)
 			results,aiming_results,vel_max,Strt=self.HT_model(25.,5.,overflux=not np.all(aiming_results[1]))
 			Vel_bool=vel_max<2.44
 			print('		C_aiming', C_aiming)
@@ -532,9 +535,7 @@ class one_key_start:
 		MDBA_results=[q_results[-1]/GA_tot,1-usage,cos_loss,ref_loss,sb_loss,att_loss,spi_loss]
 		
 		return Defocus,MDBA_results
-	
-	def test_DS_aiming(self):
-		self.MDBA_aiming_new(dni=980.,phi=0.,elevation=55.08)
+
 	
 	def annual_trimmed_field(self): # OELT and RELT generations
 
@@ -676,15 +677,15 @@ class one_key_start:
 			n_banks=self.num_bundle, 
 			n_elems=self.bins, 
 			D_tubes_o=self.D0/1000., 
-			D_tubes_i=self.D0/1000.-2.*1.2e-3, 
-		    abs_t=0.98, 
-			ems_t=0.91, 
+			D_tubes_i=self.D0/1000.-2.*1.5e-3, 
+		    abs_t=0.94, 
+			ems_t=0.88, 
 			k_coating=1.2, 
 			D_coating_o=self.D0/1000.+45e-6)
 		if self.HTF=='sodium':
 			Strt=rec.flow_path(option=self.pattern+str(self.num_fp),fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
 		elif self.HTF=='salt':
-			Strt=rec.flow_path(option=self.pattern,fluxmap_file=self.casedir+'/flux-table.csv') # 16 flow paths
+			Strt=rec.flow_path(option=self.pattern,fluxmap_file=self.casedir+'/flux-table.csv')
 		rec.balance(
 			HC=self.HC, 
 			material=self.rec_material_model, 
@@ -697,7 +698,9 @@ class one_key_start:
 		if self.rec_material=='Haynes230':
 			material_name='N06230'
 		elif self.rec_material=='Inconel740H':
-			material_name='N07740'
+			material_name='Incoloy800H'
+		elif self.rec_material=='Incoloy800H':
+			material_name='N08811'
 	
 		flux_limits_file='%s/%s_OD%.2f_WT1.20_peakFlux.csv'%(self.fluxlimitpath,material_name, self.D0)
 	

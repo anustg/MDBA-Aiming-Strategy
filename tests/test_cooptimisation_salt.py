@@ -32,37 +32,36 @@ class TestCooptimisationSalt(unittest.TestCase):
 
 		Model=one_key_start(
 			casedir=casedir, 
-			tower_h=180., 
+			tower_h=114.75, 
 			Q_rec=111.e6/0.51*2.4,
 			T_in=290+273.15,
 			T_out=565+273.15,
 			HTF='salt',
-			rec_material='Haynes230',
-			r_diameter=25.,
-			r_height=24.,
-			fluxlimitpath='../data/201015_N06230_thermoElasticPeakFlux_velocity_salt',
+			rec_material='Incoloy800H',
+			r_diameter=8.5,
+			r_height=10.5,
+			fluxlimitpath='../data/201015_N08811_thermoElasticPeakFlux_velocity_salt',
 			SM=2.4,
 			oversizing=1., 	
 			delta_r2=0.9,
 			delta_r3=1.9,
-			hst_w=12.,
-			hst_h=12.,
-			mirror_reflectivity=0.95,
-			slope_error=1.5e-3,
+			hst_w=12.305,
+			hst_h=9.752,
+			mirror_reflectivity=0.88,
+			slope_error=0.0026,
 			sunshape='pillbox',
 			sunshape_param=4.65e-3*180./np.pi,
-			num_rays=int(1e6),
-			latitude=34.85,
+			num_rays=int(1e7),
+			latitude=37.56,
 			)
-
 		#Model.big_field_generation()
 		#Model.annual_big_field()
 		#Model.determine_field()
 		
 		# input the number of tube bundles, number of flowpaths, pipe outer diameter and flow path pattern
-		Model.flow_path_salt(num_bundle=12,num_fp=2,D0=48.26,pattern='NES-NWS') 
-		#Model.test_DS_aiming()
-		Model.annual_trimmed_field()
+		Model.flow_path_salt(num_bundle=18,num_fp=2,D0=45.,pattern='NES-NWS') 
+		Model.MDBA_aiming_new(dni=930.,phi=0.,elevation=75.89)
+		#Model.annual_trimmed_field()
 
 
 	def test_touching(self):
