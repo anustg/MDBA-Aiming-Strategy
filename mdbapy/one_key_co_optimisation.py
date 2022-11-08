@@ -28,7 +28,7 @@ from .SOLSTICE import SolsticeScene
 
 
 class one_key_start:
-	def __init__(self, casedir, tower_h, Q_rec, T_in, T_out, HTF, rec_material, r_diameter, r_height, fluxlimitpath, SM, oversizing, delta_r2, delta_r3, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=1000000, latitude=34.85):
+	def __init__(self, casedir, tower_h, Q_rec, T_in, T_out, HTF, rec_material, r_diameter, r_height, fluxlimitpath, SM, oversizing, delta_r2, delta_r3, hst_w, hst_h, mirror_reflectivity, slope_error, sunshape='buie', sunshape_param=0.02, num_rays=1000000, latitude=34.85,num_bundle=16):
 		"""
 		casedir (str): case directory
 		tower_h (float): tower height (m)
@@ -95,7 +95,7 @@ class one_key_start:
 		self.r_height=r_height # receiver height
 		self.bins=50 # vertical binning of receiver surface
 		self.num_rays=num_rays # number of rays
-		self.num_bundle=16 # A primary number of tube banks
+		self.num_bundle=num_bundle # A primary number of tube banks
 		self.Q_rec=Q_rec
 		self.T_in=T_in	
 		self.T_out=T_out
@@ -126,9 +126,19 @@ class one_key_start:
 		
 	def big_field_generation(self): # generate a large field 
 		# generate and store 'pos_and_aiming.csv'
-		pos_and_aim=radial_stagger(latitude=self.latitude, num_hst=self.num_hst, width=self.hst_w, height=self.hst_h, hst_z=0.7*self.hst_h, 
-		  towerheight=self.tower_h+0.5*self.r_height, R1=150., delta_r_g=[0.866,self.delta_r2,self.delta_r3], 
-		  dsep=0., field='surround', savedir=self.casedir, plot=False) # towerheight: the optical tower height
+		pos_and_aim=radial_stagger(
+			latitude=self.latitude, 
+			num_hst=self.num_hst, 
+			width=self.hst_w, 
+			height=self.hst_h, 
+			hst_z=0.7*self.hst_h, 
+			towerheight=self.tower_h+0.5*self.r_height, # towerheight: the optical tower height
+			R1=150., 
+			delta_r_g=[0.866,self.delta_r2,self.delta_r3], 
+			dsep=0., 
+			field='surround', 
+			savedir=self.casedir, 
+			plot=False) 
 		
 		# equatorial aiming 
 		aiming_cylinder(self.r_height,self.r_diameter, pos_and_aim, self.casedir, c_aiming=0.) 
@@ -153,9 +163,15 @@ class one_key_start:
 	def equinox(self,csv_equinox): # optical simulation at design point
 		# run ray tracing simulation
 		att_factor=self.attenuation(csv_equinox)		
-		self.run_SOLSTICE(dni=980.,phi=0.,elevation=55.08,att_factor=att_factor,num_rays=self.num_rays,csv=csv_equinox)
+		self.run_SOLSTICE(
+			dni=980.,
+			phi=0.,
+			elevation=55.08,
+			att_factor=att_factor,
+			num_rays=self.num_rays,
+			csv=csv_equinox)
 		eta,q_results,eta_exc_intec=proces_raw_results('%s/simul'% self.casedir,'%s/'% self.casedir)
-		print(eta,eta/eta_exc_intec)
+		print('eta',eta, 'Interception efficiency', eta/eta_exc_intec)
 		# calculate the efficiency of each heliostat
 		hst_info=np.loadtxt(csv_equinox,delimiter=',', skiprows=2)
 		num_hst=int(len(hst_info))
@@ -406,7 +422,13 @@ class one_key_start:
 			stand_by=False)
 
 		usage=float(self.num_hst-sum(Hst_stand))/self.num_hst
-		self.run_SOLSTICE(dni=dni,phi=phi,elevation=elevation,att_factor=att_factor,num_rays=self.num_rays,csv=self.csv_aiming)
+		self.run_SOLSTICE(
+			dni=dni,
+			phi=phi,
+			elevation=elevation,
+			att_factor=att_factor,
+			num_rays=self.num_rays,
+			csv=self.csv_aiming)
 		eta,q_results,eta_exc_intec=proces_raw_results('%s/simul'% self.casedir,'%s/'% self.casedir)
 		cos_loss=q_results[1]/q_results[0]*usage # ratio
 		ref_loss=q_results[3]/q_results[0]*usage
@@ -414,7 +436,14 @@ class one_key_start:
 		att_loss=q_results[5]/q_results[0]*usage
 		spi_loss=q_results[6]/q_results[0]*usage
 		print('	Interception efficiency: ' + str(eta/eta_exc_intec))
-		read_data(self.casedir,self.r_height,self.r_diameter,self.num_bundle,self.bins,flux_file=True,flux_map=True)
+		read_data(
+			self.casedir,
+			self.r_height,
+			self.r_diameter,
+			self.num_bundle,
+			self.bins,
+			flux_file=True,
+			flux_map=True)
 		results,aiming_results,vel_max,Strt=self.HT_model(25.,5.)
 		Vel_bool=vel_max<2.44
 		print('	Q_abs', q_results[-1])
@@ -431,7 +460,7 @@ class one_key_start:
 		ite1=0
 		pos_and_aiming_stand_by=np.array([])
 		while ((np.all(aiming_results[1])==False or np.all(Vel_bool)==False) and ite1<25): #and np.all(C_aiming<1.):
-			print('		Iteration', ite1)	
+			print('	Iteration', ite1)	
 
 			if np.all(C_aiming<1.)==False:
 				# instead of extent E, defocus high-foc heliostats
@@ -455,7 +484,7 @@ class one_key_start:
 				pos_and_aiming_new=np.append(title,pos_and_aiming_new)
 				pos_and_aiming_new=pos_and_aiming_new.reshape(int(len(pos_and_aiming_new)/7), 7)
 				np.savetxt('%s/pos_and_aiming_new.csv' % self.casedir, pos_and_aiming_new, fmt='%s', delimiter=',')	
-				print('		length: %s'%str(len(pos_and_aiming_new)-2))
+				print('		num_helios: %s'%str(len(pos_and_aiming_new)-2))
 			else:
 				C_aiming_old=np.ones(self.num_bundle)
 				C_aiming_old[:]=C_aiming[:]
@@ -698,7 +727,7 @@ class one_key_start:
 		if self.rec_material=='Haynes230':
 			material_name='N06230'
 		elif self.rec_material=='Inconel740H':
-			material_name='Incoloy800H'
+			material_name='N07740'
 		elif self.rec_material=='Incoloy800H':
 			material_name='N08811'
 	
@@ -761,7 +790,24 @@ class one_key_start:
 			phi=phi-360.
 		print('	Sun position (%.2f, %.2f), DNI %.1f'%(phi, elevation,dni))
 
-		scene=SolsticeScene(mainfolder=self.casedir,num_rays=num_rays,dni=dni,azimuth=phi,zenith=elevation,att_factor=att_factor,csv=csv,tower_h=self.tower_h,r_cyl=self.r_diameter/2.,h_cyl=self.r_height,num_bundle=self.num_bundle, hst_w=self.hst_w, hst_h=self.hst_h, mirror_reflectivity=self.mirror_reflectivity, slope_error=self.slope_error, sunshape=self.sunshape, sunshape_param=self.sunshape_param)
+		scene=SolsticeScene(
+			mainfolder=self.casedir,
+			num_rays=num_rays,
+			dni=dni,
+			azimuth=phi,
+			zenith=elevation,
+			att_factor=att_factor,
+			csv=csv,
+			tower_h=self.tower_h,
+			r_cyl=self.r_diameter/2.,
+			h_cyl=self.r_height,
+			num_bundle=self.num_bundle, 
+			hst_w=self.hst_w, 
+			hst_h=self.hst_h, 
+			mirror_reflectivity=self.mirror_reflectivity, 
+			slope_error=self.slope_error, 
+			sunshape=self.sunshape, 
+			sunshape_param=self.sunshape_param)
 		scene.gen_YAML()
 		scene.runSOLSTICE(savefile=self.casedir, view=True)
 	

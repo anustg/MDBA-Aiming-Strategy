@@ -53,12 +53,13 @@ class TestCooptimisationSodium(unittest.TestCase):
 			sunshape_param=4.65e-3*180./np.pi,
 			num_rays=int(1e6),
 			latitude=34.85,
+			num_bundle=16
 			)
 
-		Model.big_field_generation()
-		Model.annual_big_field()
-		Model.determine_field()
-		Model.flow_path()
+		#Model.big_field_generation()
+		#Model.annual_big_field()
+		#Model.determine_field()
+		Model.flow_path_sodium()
 		Model.annual_trimmed_field()	
 
 
