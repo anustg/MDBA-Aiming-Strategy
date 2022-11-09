@@ -20,7 +20,7 @@ class TestCooptimisationSodium(unittest.TestCase):
 		from mdbapy.Tube_materials import Inconel740H
 		from mdbapy.Flux_reader import read_data
 		from mdbapy.Loss_analysis import receiver_correlation
-		from mdbapy.output_motab import output_motab, output_matadata_motab
+		from mdbapy.output_motab import output_motab, output_metadata_motab
 		from mdbapy.python_postprocessing import proces_raw_results, get_heliostat_to_receiver_data
 		from mdbapy.SOLSTICE import SolsticeScene
 

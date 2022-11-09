@@ -55,7 +55,7 @@ def output_motab(table,savedir=None, title=None):
 	f.close()
 
 
-def output_matadata_motab(table, field_type, aiming, n_helios, A_helio, eff_design, d_receiver, h_receiver, H_tower, eff_rec_design,coefs_T, coefs, eff_abs, eff_emi,SM,savedir=None, details_en=None):
+def output_metadata_motab(table, field_type, aiming, n_helios, A_helio, eff_design, d_receiver, h_receiver, H_tower, eff_rec_design,coefs_T, coefs, eff_abs, eff_emi,SM,savedir=None, details_en=None):
 	"""Output the .motab file to work with the SolarTherm program
 
 	``Arguments``
