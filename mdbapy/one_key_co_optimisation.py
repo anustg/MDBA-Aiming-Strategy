@@ -22,7 +22,7 @@ from .HC import Na, Solar_salt
 from .Tube_materials import Inconel740H, Haynes230, Incoloy800H
 from .Flux_reader import read_data
 from .Loss_analysis import receiver_correlation
-from .output_motab import output_motab, output_matadata_motab
+from .output_motab import output_motab, output_metadata_motab
 from .python_postprocessing import proces_raw_results, get_heliostat_to_receiver_data
 from .SOLSTICE import SolsticeScene
 
@@ -693,7 +693,7 @@ class one_key_start:
 		coefs_T,coefs,eff_abs,eff_emi,A_rec=receiver_correlation(self.r_diameter,self.r_height,folder=self.casedir)
 
 		
-		output_matadata_motab(table, field_type='surrounding', aiming='MDBA', n_helios=self.num_hst, A_helio=self.hst_w*self.hst_h, eff_design=Equinox[0], 
+		output_metadata_motab(table, field_type='surrounding', aiming='MDBA', n_helios=self.num_hst, A_helio=self.hst_w*self.hst_h, eff_design=Equinox[0], 
 		  d_receiver=self.r_diameter, h_receiver=self.r_height, H_tower=self.tower_h, eff_rec_design=Equinox[1], coefs_T=coefs_T, coefs=coefs, eff_abs=eff_abs, eff_emi= eff_emi,SM=self.SM, savedir='%s/OELT_Solstice.motab'%self.casedir)
 				
 	def HT_model(self,T_amb,V_wind,overflux=True): # receiver heat balance model

@@ -56,9 +56,9 @@ class TestCooptimisationSodium(unittest.TestCase):
 			num_bundle=16
 			)
 
-		#Model.big_field_generation()
-		#Model.annual_big_field()
-		#Model.determine_field()
+		Model.big_field_generation()
+		Model.annual_big_field()
+		Model.determine_field()
 		Model.flow_path_sodium()
 		Model.annual_trimmed_field()	
 
